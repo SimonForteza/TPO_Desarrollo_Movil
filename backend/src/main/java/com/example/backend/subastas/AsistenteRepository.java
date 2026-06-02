@@ -21,4 +21,11 @@ public interface AsistenteRepository extends JpaRepository<Asistente, Integer> {
     boolean existsByClienteIdentificadorAndSubastaIdentificador(Integer clienteId, Integer subastaId);
 
     Optional<Asistente> findByClienteIdentificadorAndSubastaIdentificador(Integer clienteId, Integer subastaId);
+
+    @Query("""
+        SELECT COUNT(a) > 0 FROM Asistente a
+        WHERE a.medioPagoId = :medioPagoId
+          AND a.subasta.estado = 'abierta'
+        """)
+    boolean isMedioInActiveAuction(@Param("medioPagoId") Long medioPagoId);
 }

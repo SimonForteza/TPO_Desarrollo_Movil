@@ -85,6 +85,7 @@ public class InscripcionService {
         asistente.setCliente(cliente);
         asistente.setSubasta(subasta);
         asistente.setNumeroPostor(numeroPostor);
+        asistente.setMedioPagoId(req.medioPagoId());
         asistenteRepository.save(asistente);
 
         return new InscripcionResponse(
