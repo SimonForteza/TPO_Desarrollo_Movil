@@ -1,10 +1,13 @@
 package com.example.backend.dev;
 
+import com.example.backend.auth.entity.Usuario;
 import com.example.backend.legacy.entity.*;
+import com.example.backend.mediosdepago.entity.MedioDePago;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.context.annotation.Profile;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +21,12 @@ public class DevDataSeeder implements CommandLineRunner {
 
     @PersistenceContext
     private EntityManager em;
+
+    private final PasswordEncoder passwordEncoder;
+
+    public DevDataSeeder(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     @Transactional
@@ -123,6 +132,43 @@ public class DevDataSeeder implements CommandLineRunner {
         crearCatalogoConItems(s1, empleado, prod1, new BigDecimal("15000.00"), new BigDecimal("1500.00"));
         crearCatalogoConItems(s2, empleado, prod2, new BigDecimal("80000.00"), new BigDecimal("8000.00"));
         crearCatalogoConItems(s3, empleado, prod3, new BigDecimal("25000.00"), new BigDecimal("2500.00"));
+
+        em.flush();
+
+        // Test client + user for Flow 4 happy-path testing
+        Persona pCliente = new Persona();
+        pCliente.setNombre("Usuario Test");
+        pCliente.setDocumento("44444444");
+        pCliente.setDireccion("Belgrano, CABA");
+        pCliente.setEstado("activo");
+        em.persist(pCliente);
+        em.flush();
+
+        Cliente clienteTest = new Cliente();
+        clienteTest.setIdentificador(pCliente.getIdentificador());
+        clienteTest.setPersona(pCliente);
+        clienteTest.setPais(argentina);
+        clienteTest.setAdmitido("si");
+        clienteTest.setCategoria("plata");
+        clienteTest.setVerificador(empleado);
+        em.persist(clienteTest);
+        em.flush();
+
+        Usuario usuarioTest = new Usuario();
+        usuarioTest.setEmail("test@subastapro.com");
+        usuarioTest.setPasswordHash(passwordEncoder.encode("password123"));
+        usuarioTest.setEstadoKyc("activo");
+        usuarioTest.setClienteId(pCliente.getIdentificador());
+        em.persist(usuarioTest);
+        em.flush();
+
+        MedioDePago medioTest = new MedioDePago();
+        medioTest.setUsuarioId(usuarioTest.getId());
+        medioTest.setTipo("tarjeta");
+        medioTest.setMoneda("ARS");
+        medioTest.setEstado("verificado");
+        medioTest.setDatosEnmascarados("**** **** **** 4242");
+        em.persist(medioTest);
 
         em.flush();
     }

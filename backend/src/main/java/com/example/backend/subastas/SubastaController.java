@@ -4,8 +4,10 @@ import com.example.backend.auth.entity.Usuario;
 import com.example.backend.shared.dto.ApiResponse;
 import com.example.backend.shared.dto.PagedResponse;
 import com.example.backend.subastas.dto.*;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -15,9 +17,11 @@ import org.springframework.web.bind.annotation.*;
 public class SubastaController {
 
     private final SubastaService subastaService;
+    private final InscripcionService inscripcionService;
 
-    public SubastaController(SubastaService subastaService) {
+    public SubastaController(SubastaService subastaService, InscripcionService inscripcionService) {
         this.subastaService = subastaService;
+        this.inscripcionService = inscripcionService;
     }
 
     @GetMapping
@@ -55,5 +59,15 @@ public class SubastaController {
             @PathVariable Integer itemId) {
         CatalogoItemDetailResponse result = subastaService.itemDetail(usuario, id, itemId);
         return ResponseEntity.ok(ApiResponse.ok("Item detail", result));
+    }
+
+    @PostMapping("/{id}/inscribirse")
+    public ResponseEntity<ApiResponse<InscripcionResponse>> inscribirse(
+            @AuthenticationPrincipal Usuario usuario,
+            @PathVariable Integer id,
+            @Valid @RequestBody InscripcionRequest req) {
+        InscripcionResponse response = inscripcionService.inscribir(usuario, id, req);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Successfully inscribed", response));
     }
 }
