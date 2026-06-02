@@ -45,4 +45,7 @@ public class Subasta {
 
     @Column(name = "categoria")
     private String categoria;
+
+    @Column(name = "moneda")
+    private String moneda;
 }
