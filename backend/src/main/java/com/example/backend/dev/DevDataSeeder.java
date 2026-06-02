@@ -170,6 +170,12 @@ public class DevDataSeeder implements CommandLineRunner {
         medioTest.setDatosEnmascarados("**** **** **** 4242");
         em.persist(medioTest);
 
+        Asistente asistenteTest = new Asistente();
+        asistenteTest.setCliente(clienteTest);
+        asistenteTest.setSubasta(s1);
+        asistenteTest.setNumeroPostor(1);
+        em.persist(asistenteTest);
+
         em.flush();
     }
 
