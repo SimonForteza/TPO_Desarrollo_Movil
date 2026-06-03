@@ -1,6 +1,7 @@
 package com.example.backend.dev;
 
 import com.example.backend.auth.entity.Usuario;
+import com.example.backend.cuentascobro.entity.CuentaCobro;
 import com.example.backend.legacy.entity.*;
 import com.example.backend.mediosdepago.entity.MedioDePago;
 import jakarta.persistence.EntityManager;
@@ -184,6 +185,13 @@ public class DevDataSeeder implements CommandLineRunner {
         asistenteTest.setNumeroPostor(1);
         asistenteTest.setMedioPagoId(medioTest.getId());
         em.persist(asistenteTest);
+
+        CuentaCobro cuentaCobro = new CuentaCobro();
+        cuentaCobro.setUsuarioId(usuarioTest.getId());
+        cuentaCobro.setBanco("Banco Galicia");
+        cuentaCobro.setPais("Argentina");
+        cuentaCobro.setNumeroCuenta("0070123456789012");
+        em.persist(cuentaCobro);
 
         em.flush();
     }
