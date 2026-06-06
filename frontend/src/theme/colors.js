@@ -1,10 +1,8 @@
 export const colors = {
-  primary: '#003C73',    // Azul Marino (Headers, botones principales)
-  secondary: '#EA7915',  // Naranja (Acentos, iconos, notificaciones)
-  background: '#F8F9FA', // Fondo/Neutro (Fondo general de la app)
-  surface: '#FFFFFF',    // Tarjetas, modales
-  textPrimary: '#333333',
-  textSecondary: '#666666',
-  border: '#DDDDDD',
-  error: '#D32F2F',      // Para validaciones
+  primary: '#0056b3',      // Un azul institucional
+  secondary: '#FF8C00',    // Un naranja para contrastar (subastas)
+  background: '#FFFFFF',   // Fondo blanco
+  surface: '#FFFFFF',      // Color para superficies o texto sobre primary
+  textPrimary: '#000000',  // Texto principal
+  textSecondary: '#666666',// Texto secundario (grises)
 };

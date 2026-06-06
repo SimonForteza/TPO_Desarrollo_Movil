@@ -6,16 +6,17 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   KeyboardAvoidingView, 
-  Platform 
+  Platform,
+  Image 
 } from 'react-native';
-import { colors } from '../../../example/src/theme/colors';
+import { colors } from '../../theme/colors';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    // Más adelante conectaremos esto con AuthService.java
+    // Acá más adelante conectaremos con AuthService.java
     console.log("Intentando login con:", email, password);
   };
 
@@ -26,9 +27,13 @@ export default function LoginScreen({ navigation }) {
     >
       <View style={styles.content}>
         
-        {/* Placeholder del Logo */}
+        {/* Logo */}
         <View style={styles.logoContainer}>
-          <Text style={styles.logoPlaceholder}>🔨</Text> 
+          <Image 
+            source={require('../../../assets/images/logo.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         <Text style={styles.title}>Bienvenido a SubastaPro</Text>
@@ -53,25 +58,10 @@ export default function LoginScreen({ navigation }) {
           secureTextEntry
         />
 
-        {/* Botón Iniciar */}
         <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
-          <Text style={styles.primaryButtonText}>Iniciar</Text>
+          <Text style={styles.primaryButtonText}>Iniciar Sesión</Text>
         </TouchableOpacity>
 
-        {/* Link Olvidaste contraseña */}
-        <TouchableOpacity style={styles.forgotPassword}>
-          <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Footer con Crear Cuenta */}
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          style={styles.secondaryButton} 
-          onPress={() => console.log('Navegar a Registro')}
-        >
-          <Text style={styles.secondaryButtonText}>Crear Cuenta</Text>
-        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -91,8 +81,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  logoPlaceholder: {
-    fontSize: 60,
+  logo: {
+    width: 100,
+    height: 100,
   },
   title: {
     fontSize: 22,
@@ -102,7 +93,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   input: {
-    backgroundColor: '#C4C4C4', // Gris similar al wireframe
+    backgroundColor: '#E8E8E8',
     borderRadius: 8,
     padding: 15,
     marginBottom: 20,
@@ -117,30 +108,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   primaryButtonText: {
-    color: colors.surface,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  forgotPassword: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  forgotPasswordText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-  },
-  footer: {
-    padding: 30,
-    paddingBottom: 40,
-  },
-  secondaryButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: colors.surface,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
   }
