@@ -1,5 +1,5 @@
 import { Button, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../../theme/colors';
+import { colors } from '../../../example/src/theme/colors';
 
 export default function WelcomeScreen({ navigation }) {
   return (
