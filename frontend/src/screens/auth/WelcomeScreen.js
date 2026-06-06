@@ -14,7 +14,7 @@ export default function WelcomeScreen({ navigation }) {
       <View style={styles.buttonContainer}>
         <Button title="Iniciar Sesión" color={colors.primary} onPress={() => navigation.navigate('Login')} />
         <View style={{ height: 15 }} />
-        <Button title="Crear Cuenta" color={colors.secondary} onPress={() => console.log('Registro')} />
+        <Button title="Crear Cuenta" color={colors.secondary} onPress={() => navigation.navigate('RegisterStep1')} />
       </View>
     </View>
   );
