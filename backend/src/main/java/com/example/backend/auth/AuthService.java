@@ -73,7 +73,6 @@ public class AuthService {
         personaRepository.save(persona);
 
         Cliente cliente = new Cliente();
-        cliente.setIdentificador(persona.getIdentificador());
         cliente.setPersona(persona);
         cliente.setPais(pais);
         cliente.setAdmitido("no");
