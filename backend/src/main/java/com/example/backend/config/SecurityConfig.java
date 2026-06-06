@@ -1,7 +1,7 @@
 package com.example.backend.config;
 
-import com.example.backend.auth.CustomUserDetailsService;
-import com.example.backend.auth.JwtAuthenticationFilter;
+import com.example.backend.auth.security.JwtAuthenticationFilter;
+import com.example.backend.auth.service.CustomUserDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.example.backend.shared.dto.ApiResponse;

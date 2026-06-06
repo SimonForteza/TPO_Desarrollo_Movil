@@ -1,6 +1,6 @@
 package com.example.backend.auth.entity;
 
-import com.example.backend.auth.TokenTipo;
+import com.example.backend.auth.security.TokenTipo;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
