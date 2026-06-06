@@ -8,6 +8,7 @@ import DniFront from '../screens/auth/DniFront';
 import DniBack from '../screens/auth/DniBack';
 import VerificationPending from '../screens/auth/VerificationPending';
 import { colors } from '../theme/colors';
+import HomeScreen from '../screens/home/HomeScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -58,6 +59,11 @@ export default function AuthStack() {
         name="VerificationPending" 
         component={VerificationPending} 
         options={{ headerShown: false }} // Acá ocultamos la barra porque es una pantalla final
+      />
+      <Stack.Screen 
+        name="Home" 
+        component={HomeScreen} 
+        options={{ headerShown: false }} 
       />
     </Stack.Navigator>
   );
