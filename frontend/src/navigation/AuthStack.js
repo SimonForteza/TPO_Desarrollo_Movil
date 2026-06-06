@@ -9,6 +9,7 @@ import DniBack from '../screens/auth/DniBack';
 import VerificationPending from '../screens/auth/VerificationPending';
 import { colors } from '../theme/colors';
 import HomeScreen from '../screens/home/HomeScreen';
+import CompleteRegistration from '../screens/auth/CompleteRegistration';
 
 const Stack = createNativeStackNavigator();
 
@@ -64,6 +65,11 @@ export default function AuthStack() {
         name="Home" 
         component={HomeScreen} 
         options={{ headerShown: false }} 
+      />
+      <Stack.Screen 
+        name="CompleteRegistration" 
+        component={CompleteRegistration} 
+        options={{ title: 'Crear Contraseña', headerBackVisible: false }} 
       />
     </Stack.Navigator>
   );
