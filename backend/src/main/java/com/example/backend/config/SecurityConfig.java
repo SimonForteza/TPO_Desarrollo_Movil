@@ -56,6 +56,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/auth/registro",
                                 "/auth/completar-registro",
+                                "/auth/kyc-estado/**",
                                 "/auth/login",
                                 "/auth/recuperar-password",
                                 "/auth/refresh",

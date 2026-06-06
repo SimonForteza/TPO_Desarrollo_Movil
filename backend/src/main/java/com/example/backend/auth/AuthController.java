@@ -2,6 +2,7 @@ package com.example.backend.auth;
 
 import com.example.backend.auth.dto.*;
 import com.example.backend.auth.entity.Usuario;
+import com.example.backend.auth.kyc.KycSimulacionService;
 import com.example.backend.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -14,17 +15,29 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final KycSimulacionService kycSimulacionService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, KycSimulacionService kycSimulacionService) {
         this.authService = authService;
+        this.kycSimulacionService = kycSimulacionService;
     }
 
     @PostMapping("/registro")
     public ResponseEntity<ApiResponse<RegistroEtapa1Response>> registro(
             @Valid @RequestBody RegistroEtapa1Request req) {
         RegistroEtapa1Response response = authService.registrar(req);
+        kycSimulacionService.iniciarVerificacion(
+                response.usuarioId(), response.tokenActivacion(), response.expiraEn());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok("Registration started. Awaiting KYC approval.", response));
+    }
+
+    @GetMapping("/kyc-estado/{usuarioId}")
+    public ResponseEntity<ApiResponse<KycEstadoResponse>> kycEstado(@PathVariable Long usuarioId) {
+        KycEstadoResponse body = kycSimulacionService.obtener(usuarioId)
+                .map(info -> new KycEstadoResponse(true, info.token(), info.expiraEn()))
+                .orElse(new KycEstadoResponse(false, null, null));
+        return ResponseEntity.ok(ApiResponse.ok("KYC status", body));
     }
 
     @PostMapping("/completar-registro")
