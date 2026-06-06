@@ -26,8 +26,6 @@ public class AuthController {
     public ResponseEntity<ApiResponse<RegistroEtapa1Response>> registro(
             @Valid @RequestBody RegistroEtapa1Request req) {
         RegistroEtapa1Response response = authService.registrar(req);
-        kycSimulacionService.iniciarVerificacion(
-                response.usuarioId(), response.tokenActivacion(), response.expiraEn());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok("Registration started. Awaiting KYC approval.", response));
     }

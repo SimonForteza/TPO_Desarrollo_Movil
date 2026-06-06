@@ -3,6 +3,7 @@ package com.example.backend.auth;
 import com.example.backend.auth.dto.*;
 import com.example.backend.auth.entity.TokenActivacion;
 import com.example.backend.auth.entity.Usuario;
+import com.example.backend.auth.kyc.KycSimulacionService;
 import com.example.backend.legacy.entity.Cliente;
 import com.example.backend.legacy.entity.Pais;
 import com.example.backend.legacy.entity.Persona;
@@ -33,6 +34,7 @@ public class AuthService {
     private final PaisRepository paisRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+    private final KycSimulacionService kycSimulacionService;
 
     public AuthService(UsuarioRepository usuarioRepository,
                        TokenActivacionRepository tokenActivacionRepository,
@@ -40,7 +42,8 @@ public class AuthService {
                        ClienteRepository clienteRepository,
                        PaisRepository paisRepository,
                        JwtUtil jwtUtil,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       KycSimulacionService kycSimulacionService) {
         this.usuarioRepository = usuarioRepository;
         this.tokenActivacionRepository = tokenActivacionRepository;
         this.personaRepository = personaRepository;
@@ -48,6 +51,7 @@ public class AuthService {
         this.paisRepository = paisRepository;
         this.jwtUtil = jwtUtil;
         this.passwordEncoder = passwordEncoder;
+        this.kycSimulacionService = kycSimulacionService;
     }
 
     public RegistroEtapa1Response registrar(RegistroEtapa1Request req) {
@@ -96,7 +100,8 @@ public class AuthService {
         token.setUsado(false);
         tokenActivacionRepository.save(token);
 
-        return new RegistroEtapa1Response(usuario.getId(), usuario.getEmail(), token.getToken(), expiraEn);
+        kycSimulacionService.iniciarVerificacion(usuario.getId(), token.getToken(), expiraEn);
+        return new RegistroEtapa1Response(usuario.getId(), usuario.getEmail());
     }
 
     public void completarRegistro(CompletarRegistroRequest req) {
