@@ -25,4 +25,7 @@ public class Asistente {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subasta")
     private Subasta subasta;
+
+    @Column(name = "medio_pago_id")
+    private Long medioPagoId;
 }
