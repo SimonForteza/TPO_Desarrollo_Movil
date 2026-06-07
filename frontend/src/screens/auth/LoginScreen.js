@@ -26,6 +26,10 @@ export default function LoginScreen({ navigation }) {
       Alert.alert('Error', 'Completá el email y la contraseña.');
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      Alert.alert('Error', 'Ingresá un correo electrónico válido.');
+      return;
+    }
 
     setLoading(true);
     try {
