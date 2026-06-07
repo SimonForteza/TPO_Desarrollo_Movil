@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import axios from 'axios';
+import { API_URL } from '../../api/config';
 import { colors } from '../../theme/colors';
 
 export default function CompleteRegistration({ route, navigation }) {
@@ -28,7 +29,7 @@ export default function CompleteRegistration({ route, navigation }) {
     setLoading(true);
     try {
       // Le pegamos al endpoint final de tu backend
-      await axios.post('http://10.0.2.2:8080/auth/completar-registro', {
+      await axios.post(`${API_URL}/auth/completar-registro`, {
         tokenActivacion,
         password,
         passwordConfirmacion

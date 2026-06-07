@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import { API_URL } from '../../api/config';
 import { colors } from '../../theme/colors';
 
 export default function VerificationPending({ route, navigation }) {
@@ -14,7 +15,7 @@ export default function VerificationPending({ route, navigation }) {
 
     intervalRef.current = setInterval(async () => {
       try {
-        const res = await axios.get(`http://10.0.2.2:8080/auth/kyc-estado/${usuarioId}`);
+        const res = await axios.get(`${API_URL}/auth/kyc-estado/${usuarioId}`);
         
         if (res.data.data && res.data.data.aprobado === true) {
           clearInterval(intervalRef.current);
