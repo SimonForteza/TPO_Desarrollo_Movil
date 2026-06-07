@@ -168,6 +168,29 @@ public class AuthService {
         return new RefreshResponse(newAccess, newRefresh);
     }
 
+    public void resetearPassword(ResetearPasswordRequest req) {
+        if (!req.password().equals(req.passwordConfirmacion())) {
+            throw new BusinessRuleException("Passwords do not match");
+        }
+
+        TokenActivacion token = tokenActivacionRepository.findByTokenAndUsadoFalse(req.tokenRecuperacion())
+                .orElseThrow(() -> new ResourceNotFoundException("Recovery token not found or already used"));
+
+        if (token.getTipo() != TokenTipo.PASSWORD_RECOVERY) {
+            throw new BusinessRuleException("Invalid token type");
+        }
+        if (token.getExpiraEn().isBefore(LocalDateTime.now())) {
+            throw new TokenExpiredException("Recovery token has expired");
+        }
+
+        Usuario usuario = usuarioRepository.findById(token.getUsuarioId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        usuario.setPasswordHash(passwordEncoder.encode(req.password()));
+        usuario.setRefreshToken(null);
+        token.setUsado(true);
+    }
+
     public RecuperarPasswordResponse recuperarPassword(RecuperarPasswordRequest req) {
         return usuarioRepository.findByEmail(req.email())
                 .map(usuario -> {
