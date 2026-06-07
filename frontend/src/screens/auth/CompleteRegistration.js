@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import axios from 'axios';
 import { API_URL } from '../../api/config';
+import { clearPendingRegistration } from '../../api/session';
 import { colors } from '../../theme/colors';
 
 export default function CompleteRegistration({ route, navigation }) {
@@ -35,6 +36,7 @@ export default function CompleteRegistration({ route, navigation }) {
         passwordConfirmacion
       });
 
+      await clearPendingRegistration();
       navigation.replace('RegistroCompleto');
       
     } catch (error) {

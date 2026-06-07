@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { API_URL } from '../../api/config';
+import { setPendingRegistration } from '../../api/session';
 import { colors } from '../../theme/colors';
 
 export default function VerificationPending({ route, navigation }) {
@@ -12,6 +13,8 @@ export default function VerificationPending({ route, navigation }) {
 
   useEffect(() => {
     if (!usuarioId) return;
+
+    setPendingRegistration(usuarioId);
 
     intervalRef.current = setInterval(async () => {
       try {
