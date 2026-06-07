@@ -104,11 +104,23 @@ export default function AuthStack() {
       <Stack.Screen 
         name="AddPaymentMethod" 
         component={AddPaymentMethod} 
-        options={{ headerShown: false }} 
+        options={{ title: 'Medios de pago' }} 
       />
-      <Stack.Screen name="FormCuentaBancaria" component={FormCuentaBancaria} options={{ headerShown: false }} />
-      <Stack.Screen name="FormTarjetaCredito" component={FormTarjetaCredito} options={{ headerShown: false }} />
-      <Stack.Screen name="FormCheque" component={FormCheque} options={{ headerShown: false }} />
+      <Stack.Screen 
+        name="FormCuentaBancaria" 
+        component={FormCuentaBancaria} 
+        options={{ title: 'Agregar cuenta bancaria' }} 
+      />
+      <Stack.Screen 
+        name="FormTarjetaCredito" 
+        component={FormTarjetaCredito} 
+        options={{ title: 'Agregar tarjeta' }} 
+      />
+      <Stack.Screen 
+        name="FormCheque" 
+        component={FormCheque} 
+        options={{ title: 'Agregar cheque' }} 
+      />
     </Stack.Navigator>
   );
 }
