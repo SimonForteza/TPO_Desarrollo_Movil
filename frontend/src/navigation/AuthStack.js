@@ -10,6 +10,10 @@ import VerificationPending from '../screens/auth/VerificationPending';
 import { colors } from '../theme/colors';
 import HomeScreen from '../screens/home/HomeScreen';
 import CompleteRegistration from '../screens/auth/CompleteRegistration';
+import RegistroCompleto from '../screens/auth/RegistroCompleto';
+import RecuperarPassword from '../screens/auth/RecuperarPassword';
+import LinkEnviado from '../screens/auth/LinkEnviado';
+import ResetPassword from '../screens/auth/ResetPassword';
 
 const Stack = createNativeStackNavigator();
 
@@ -66,10 +70,32 @@ export default function AuthStack() {
         component={HomeScreen} 
         options={{ headerShown: false }} 
       />
-      <Stack.Screen 
-        name="CompleteRegistration" 
-        component={CompleteRegistration} 
-        options={{ title: 'Crear Contraseña', headerBackVisible: false }} 
+      <Stack.Screen
+        name="CompleteRegistration"
+        component={CompleteRegistration}
+        options={{ title: 'Crear Contraseña', headerBackVisible: false }}
+      />
+      <Stack.Screen
+        name="RegistroCompleto"
+        component={RegistroCompleto}
+        options={{ headerShown: false }}
+      />
+
+      {/* --- FLUJO DE RECUPERACIÓN DE CONTRASEÑA --- */}
+      <Stack.Screen
+        name="RecuperarPassword"
+        component={RecuperarPassword}
+        options={{ title: 'Recuperar Contraseña' }}
+      />
+      <Stack.Screen
+        name="LinkEnviado"
+        component={LinkEnviado}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ResetPassword"
+        component={ResetPassword}
+        options={{ title: 'Nueva Contraseña', headerBackVisible: false }}
       />
     </Stack.Navigator>
   );

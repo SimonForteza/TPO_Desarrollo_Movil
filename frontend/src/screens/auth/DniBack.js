@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, ActivityIndicator, View } from 'react-native';
 import axios from 'axios';
+import { API_URL } from '../../api/config';
 import DniUploadTemplate from '../../components/DniUploadTemplate';
 import { colors } from '../../theme/colors';
 
@@ -27,7 +28,7 @@ export default function DniBack({ route, navigation }) {
 
     try {
       // Usamos 10.0.2.2 para el Emulador de Android
-      const response = await axios.post('http://10.0.2.2:8080/auth/registro', payload);
+      const response = await axios.post(`${API_URL}/auth/registro`, payload);
       
       console.log("Respuesta del backend:", response.data);
       navigation.replace('VerificationPending', { usuarioId: response.data.data.usuarioId });

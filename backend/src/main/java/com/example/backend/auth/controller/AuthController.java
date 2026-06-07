@@ -60,6 +60,13 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("Token refreshed", response));
     }
 
+    @PostMapping("/resetear-password")
+    public ResponseEntity<ApiResponse<Void>> resetearPassword(
+            @Valid @RequestBody ResetearPasswordRequest req) {
+        authService.resetearPassword(req);
+        return ResponseEntity.ok(ApiResponse.ok("Password reset successful. You can now log in.", null));
+    }
+
     @PostMapping("/recuperar-password")
     public ResponseEntity<ApiResponse<RecuperarPasswordResponse>> recuperarPassword(
             @Valid @RequestBody RecuperarPasswordRequest req) {

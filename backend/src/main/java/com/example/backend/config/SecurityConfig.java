@@ -59,6 +59,7 @@ public class SecurityConfig {
                                 "/auth/kyc-estado/**",
                                 "/auth/login",
                                 "/auth/recuperar-password",
+                                "/auth/resetear-password",
                                 "/auth/refresh",
                                 "/h2-console/**",
                                 "/swagger-ui/**",
