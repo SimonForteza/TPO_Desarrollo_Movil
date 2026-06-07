@@ -10,19 +10,26 @@ export default function RegisterStep1({ navigation }) {
   const [email, setEmail] = useState('');
 
   const handleNext = () => {
-    if (!nombre || !apellido || !documento || !direccion || !email) {
+    if (!nombre.trim() || !apellido.trim() || !documento.trim() || !direccion.trim() || !email.trim()) {
       Alert.alert('Error', 'Por favor, completá todos los campos.');
       return;
     }
+    if (!/^\d{7,8}$/.test(documento.trim())) {
+      Alert.alert('Error', 'El DNI debe tener entre 7 y 8 dígitos numéricos.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      Alert.alert('Error', 'Ingresá un correo electrónico válido.');
+      return;
+    }
 
-    // Usamos el ID 32 que corresponde a Argentina en tu DevDataSeeder
     const userData = {
-      nombre,
-      apellido,
-      documento,
-      direccion,
-      email,
-      paisId: 32 
+      nombre: nombre.trim(),
+      apellido: apellido.trim(),
+      documento: documento.trim(),
+      direccion: direccion.trim(),
+      email: email.trim(),
+      paisId: 32,
     };
 
     navigation.navigate('DniFront', { userData });

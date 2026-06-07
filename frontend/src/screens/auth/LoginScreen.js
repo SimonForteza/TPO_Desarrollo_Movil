@@ -16,6 +16,10 @@ export default function LoginScreen({ navigation }) {
       Alert.alert("Campos vacíos", "Por favor, ingresá tu correo y contraseña.");
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      Alert.alert('Error', 'Ingresá un correo electrónico válido.');
+      return;
+    }
 
     setLoading(true);
 

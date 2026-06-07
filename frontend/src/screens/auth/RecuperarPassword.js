@@ -13,6 +13,10 @@ export default function RecuperarPassword({ navigation }) {
       Alert.alert('Error', 'Ingresá tu correo electrónico.');
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      Alert.alert('Error', 'Ingresá un correo electrónico válido.');
+      return;
+    }
 
     setLoading(true);
     try {

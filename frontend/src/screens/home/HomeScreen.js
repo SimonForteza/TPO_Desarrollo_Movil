@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, SafeAreaView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import { API_URL } from '../../api/config';
+import { getPendingRegistration, clearPendingRegistration } from '../../api/session';
 import { colors } from '../../theme/colors';
 
 // Datos de prueba para simular lo que devolverá el backend
@@ -13,6 +16,41 @@ const SUBASTAS_MOCK = [
 const CATEGORIAS = ['Tecnología', 'Vehículos', 'Inmuebles', 'Arte', 'Joyas'];
 
 export default function HomeScreen({ navigation }) {
+  const [kycAprobado, setKycAprobado] = useState(false);
+  const [tokenActivacion, setTokenActivacion] = useState(null);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    const startKycPolling = async () => {
+      const usuarioId = await getPendingRegistration();
+      if (!usuarioId) return;
+
+      intervalRef.current = setInterval(async () => {
+        try {
+          const res = await axios.get(`${API_URL}/auth/kyc-estado/${usuarioId}`);
+          const data = res.data.data;
+          if (data?.aprobado === true) {
+            clearInterval(intervalRef.current);
+            setTokenActivacion(data.tokenActivacion);
+            setKycAprobado(true);
+          }
+        } catch (error) {
+          if (error.response?.status === 404) {
+            clearInterval(intervalRef.current);
+            await clearPendingRegistration();
+          }
+        }
+      }, 5000);
+    };
+
+    startKycPolling();
+    return () => clearInterval(intervalRef.current);
+  }, []);
+
+  const handleCompletarRegistro = () => {
+    navigation.navigate('CompleteRegistration', { tokenActivacion });
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -29,6 +67,17 @@ export default function HomeScreen({ navigation }) {
             <Ionicons name="person-circle-outline" size={40} color={colors.primary} />
           </TouchableOpacity>
         </View>
+
+        {kycAprobado && (
+          <TouchableOpacity style={styles.kycBanner} onPress={handleCompletarRegistro}>
+            <Ionicons name="checkmark-circle" size={22} color={colors.surface} />
+            <View style={styles.kycBannerText}>
+              <Text style={styles.kycBannerTitle}>¡Tu identidad fue verificada!</Text>
+              <Text style={styles.kycBannerSubtitle}>Tocá aquí para crear tu contraseña y activar tu cuenta.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.surface} />
+          </TouchableOpacity>
+        )}
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           
@@ -251,5 +300,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: colors.primary,
-  }
+  },
+  kycBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 12,
+    padding: 14,
+    gap: 10,
+  },
+  kycBannerText: {
+    flex: 1,
+  },
+  kycBannerTitle: {
+    color: colors.surface,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  kycBannerSubtitle: {
+    color: colors.surface,
+    fontSize: 12,
+    opacity: 0.85,
+    marginTop: 2,
+  },
 });
