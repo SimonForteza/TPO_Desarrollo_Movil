@@ -35,7 +35,7 @@ export default function CompleteRegistration({ route, navigation }) {
         passwordConfirmacion
       });
 
-      navigation.replace('RegistroCompleto');
+      navigation.replace('AddPaymentMethod');
       
     } catch (error) {
       console.error("Error al completar registro:", error);

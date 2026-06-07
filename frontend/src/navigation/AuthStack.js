@@ -14,6 +14,10 @@ import RegistroCompleto from '../screens/auth/RegistroCompleto';
 import RecuperarPassword from '../screens/auth/RecuperarPassword';
 import LinkEnviado from '../screens/auth/LinkEnviado';
 import ResetPassword from '../screens/auth/ResetPassword';
+import AddPaymentMethod from '../screens/payments/AddPaymentMethod';
+import FormCuentaBancaria from '../screens/payments/FormCuentaBancaria';
+import FormTarjetaCredito from '../screens/payments/FormTarjetaCredito';
+import FormCheque from '../screens/payments/FormCheque';
 
 const Stack = createNativeStackNavigator();
 
@@ -97,6 +101,14 @@ export default function AuthStack() {
         component={ResetPassword}
         options={{ title: 'Nueva Contraseña', headerBackVisible: false }}
       />
+      <Stack.Screen 
+        name="AddPaymentMethod" 
+        component={AddPaymentMethod} 
+        options={{ headerShown: false }} 
+      />
+      <Stack.Screen name="FormCuentaBancaria" component={FormCuentaBancaria} options={{ headerShown: false }} />
+      <Stack.Screen name="FormTarjetaCredito" component={FormTarjetaCredito} options={{ headerShown: false }} />
+      <Stack.Screen name="FormCheque" component={FormCheque} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

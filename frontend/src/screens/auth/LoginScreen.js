@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import axios from 'axios';
+// Importamos las nuevas herramientas de la rama de Simón
+import { API_URL } from '../../api/config';
+import { setTokens } from '../../api/session';
 import { colors } from '../../theme/colors';
 
 export default function LoginScreen({ navigation }) {
@@ -9,7 +12,6 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    // 1. Validación básica para no hacer peticiones vacías
     if (!email || !password) {
       Alert.alert("Campos vacíos", "Por favor, ingresá tu correo y contraseña.");
       return;
@@ -18,23 +20,27 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
 
     try {
-      // 2. Le pegamos al backend (Asegurate de usar 10.0.2.2 en el emulador)
-      const response = await axios.post('http://10.0.2.2:8080/auth/login', {
-        email: email.trim().toLowerCase(), // Limpiamos espacios y mayúsculas
+      // Usamos la variable global API_URL en lugar de la IP hardcodeada
+      const response = await axios.post(`${API_URL}/auth/login`, {
+        email: email.trim().toLowerCase(),
         password: password
       });
 
-      console.log("¡Login exitoso!", response.data.message);
+      console.log("¡Login exitoso!");
 
-      // (En el futuro acá guardaríamos el token JWT en AsyncStorage para mantener la sesión abierta)
+      // Guardamos los tokens usando la nueva función de sesión de Simón
+      const { accessToken, refreshToken } = response.data.data;
+      await setTokens(accessToken, refreshToken);
 
-      // 3. Vamos al Home y borramos el Login del historial para que no pueda volver atrás con el botón de "Atrás"
-      navigation.replace('Home');
+      // Vamos al Home y le pasamos los datos del usuario para que cambie el diseño
+      navigation.replace('Home', { 
+        user: response.data.data.usuario,
+        token: accessToken
+      });
 
     } catch (error) {
-      console.error("Error en login:", error);
+      console.error("Error en login:", error.message);
       
-      // 4. Manejo de errores basado en lo que devuelve Spring Boot
       if (error.response) {
         if (error.response.status === 401 || error.response.status === 403) {
           Alert.alert("Error", "Credenciales incorrectas o la cuenta aún no fue activada.");
@@ -42,7 +48,8 @@ export default function LoginScreen({ navigation }) {
           Alert.alert("Error", `Problema en el servidor: ${error.response.data.message || 'Inténtalo más tarde.'}`);
         }
       } else {
-        Alert.alert("Error de conexión", "No se pudo contactar al servidor. Revisá que esté encendido.");
+        // Este es el error que te estaba tirando recién por la IP
+        Alert.alert("Error de conexión", "No se pudo contactar al servidor. Revisá la IP en config.js y que el backend esté encendido.");
       }
     } finally {
       setLoading(false);
@@ -78,7 +85,8 @@ export default function LoginScreen({ navigation }) {
             placeholderTextColor={colors.textSecondary}
           />
 
-          <TouchableOpacity style={styles.forgotPassword}>
+          {/* Actualizado para usar la nueva pantalla de Simón */}
+          <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('RecuperarPassword')}>
             <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
           </TouchableOpacity>
 
