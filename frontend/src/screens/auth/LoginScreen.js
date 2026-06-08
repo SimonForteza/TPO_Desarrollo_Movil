@@ -1,17 +1,7 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { API_URL } from '../../api/config';
 import { setTokens } from '../../api/session';
 import { colors } from '../../theme/colors';
@@ -22,8 +12,8 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email.trim() || !password) {
-      Alert.alert('Error', 'Completá el email y la contraseña.');
+    if (!email || !password) {
+      Alert.alert("Campos vacíos", "Por favor, ingresá tu correo y contraseña.");
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
@@ -32,22 +22,52 @@ export default function LoginScreen({ navigation }) {
     }
 
     setLoading(true);
+
     try {
-      const res = await axios.post(`${API_URL}/auth/login`, {
-        email: email.trim(),
-        password,
+      // Usamos la variable global API_URL en lugar de la IP hardcodeada
+      const response = await axios.post(`${API_URL}/auth/login`, {
+        email: email.trim().toLowerCase(),
+        password: password
       });
-      const { accessToken, refreshToken } = res.data.data;
-      setTokens({ accessToken, refreshToken });
-      navigation.replace('Home');
-    } catch (error) {
-      const status = error.response?.status;
-      if (status === 401 || status === 400) {
-        Alert.alert('Error', 'Email o contraseña incorrectos.');
-      } else if (status === 422) {
-        Alert.alert('Cuenta inactiva', 'Tu cuenta aún no está activa. Completá el proceso de registro.');
+
+      console.log("¡Login exitoso!");
+
+      // Guardamos los tokens usando la nueva función de sesión
+      const { accessToken, refreshToken } = response.data.data;
+      await setTokens(accessToken, refreshToken);
+
+      // Inyectamos el token en la instancia global de axios para las peticiones inmediatas
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+
+      // Leemos si existe la bandera de "primerLogin"
+      const esPrimerLogin = await AsyncStorage.getItem('primerLogin');
+
+      if (esPrimerLogin === 'true') {
+        // Como es su primera vez, borramos la bandera para que no lo vuelva a mandar acá en el futuro
+        await AsyncStorage.removeItem('primerLogin');
+        
+        // Lo mandamos a los métodos de pago (con el Token ya guardado en el sistema)
+        navigation.replace('AddPaymentMethod');
       } else {
-        Alert.alert('Error', 'No se pudo conectar. Verificá tu conexión e intentá de nuevo.');
+        // Es un login normal de un usuario viejo, va al Home
+        navigation.replace('Home', { 
+          user: response.data.data.usuario,
+          token: accessToken
+        });
+      }
+
+    } catch (error) {
+      console.error("Error en login:", error.message);
+      
+      if (error.response) {
+        if (error.response.status === 401 || error.response.status === 403) {
+          Alert.alert("Error", "Credenciales incorrectas o la cuenta aún no fue activada.");
+        } else {
+          Alert.alert("Error", `Problema en el servidor: ${error.response.data.message || 'Inténtalo más tarde.'}`);
+        }
+      } else {
+        // Este es el error si no hay conexión
+        Alert.alert("Error de conexión", "No se pudo contactar al servidor. Revisá la IP en config.js y que el backend esté encendido.");
       }
     } finally {
       setLoading(false);
@@ -55,54 +75,54 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.content}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('../../../assets/images/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+        
+        <View style={styles.header}>
+          <Text style={styles.title}>¡Hola de nuevo!</Text>
+          <Text style={styles.subtitle}>Iniciá sesión para continuar pujando en SubastaPro.</Text>
         </View>
 
-        <Text style={styles.title}>Bienvenido a SubastaPro</Text>
+        <View style={styles.form}>
+          <TextInput
+            style={styles.input}
+            placeholder="Correo electrónico"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholderTextColor={colors.textSecondary}
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Correo electrónico"
-          placeholderTextColor={colors.textSecondary}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="Contraseña"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholderTextColor={colors.textSecondary}
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          placeholderTextColor={colors.textSecondary}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+          <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('RecuperarPassword')}>
+            <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.primaryButton} onPress={handleLogin} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.primaryButtonText}>Iniciar Sesión</Text>
-          )}
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.primaryButton} onPress={handleLogin} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color={colors.surface} />
+            ) : (
+              <Text style={styles.primaryButtonText}>Iniciar Sesión</Text>
+            )}
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          style={styles.forgotButton}
-          onPress={() => navigation.navigate('RecuperarPassword')}
-        >
-          <Text style={styles.forgotButtonText}>¿Olvidaste tu contraseña?</Text>
-        </TouchableOpacity>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>¿No tenés cuenta? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('RegisterStep1')}>
+            <Text style={styles.registerText}>Registrate</Text>
+          </TouchableOpacity>
+        </View>
+
       </View>
     </KeyboardAvoidingView>
   );
@@ -111,12 +131,28 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1, justifyContent: 'center', paddingHorizontal: 30 },
-  logoContainer: { alignItems: 'center', marginBottom: 20 },
-  logo: { width: 100, height: 100 },
-  title: { fontSize: 22, fontWeight: 'bold', color: colors.primary, textAlign: 'center', marginBottom: 40 },
-  input: { backgroundColor: '#E8E8E8', borderRadius: 8, padding: 15, marginBottom: 20, fontSize: 16, color: colors.textPrimary },
-  primaryButton: { backgroundColor: colors.primary, borderRadius: 8, padding: 15, alignItems: 'center', marginTop: 10 },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
-  forgotButton: { alignItems: 'center', marginTop: 20, padding: 8 },
-  forgotButtonText: { color: colors.primary, fontSize: 15 },
+  header: { marginBottom: 40 },
+  title: { fontSize: 28, fontWeight: 'bold', color: colors.primary, marginBottom: 10 },
+  subtitle: { fontSize: 16, color: colors.textSecondary, lineHeight: 24 },
+  form: { marginBottom: 30 },
+  input: { 
+    backgroundColor: '#F3F3F3', 
+    borderRadius: 8, 
+    padding: 16, 
+    marginBottom: 16, 
+    fontSize: 16, 
+    color: colors.textPrimary 
+  },
+  forgotPassword: { alignItems: 'flex-end', marginBottom: 30 },
+  forgotText: { color: colors.primary, fontWeight: '600' },
+  primaryButton: { 
+    backgroundColor: colors.primary, 
+    borderRadius: 8, 
+    padding: 16, 
+    alignItems: 'center' 
+  },
+  primaryButtonText: { color: colors.surface, fontSize: 16, fontWeight: 'bold' },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
+  footerText: { color: colors.textSecondary, fontSize: 16 },
+  registerText: { color: colors.primary, fontSize: 16, fontWeight: 'bold' }
 });

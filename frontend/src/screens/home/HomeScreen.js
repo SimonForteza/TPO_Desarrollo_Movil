@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, SafeAreaView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { API_URL } from '../../api/config';
-import { getPendingRegistration, clearPendingRegistration } from '../../api/session';
+import { clearPendingRegistration, getPendingRegistration } from '../../api/session';
 import { colors } from '../../theme/colors';
 
 // Datos de prueba para simular lo que devolverá el backend
