@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { API_URL } from '../../api/config';
-import { setTokens } from '../../api/session';
+import { setTokens, setUserData } from '../../api/session';
 import { colors } from '../../theme/colors';
 
 export default function LoginScreen({ navigation }) {
@@ -38,6 +38,12 @@ export default function LoginScreen({ navigation }) {
 
       // Inyectamos el token en la instancia global de axios para las peticiones inmediatas
       axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+
+      // Obtenemos los datos del usuario para mostrar en Perfil
+      try {
+        const meRes = await axios.get(`${API_URL}/auth/me`);
+        setUserData(meRes.data.data);
+      } catch (_) {}
 
       // Leemos si existe la bandera de "primerLogin"
       const esPrimerLogin = await AsyncStorage.getItem('primerLogin');
