@@ -32,9 +32,12 @@ export default function LoginScreen({ navigation }) {
 
       console.log("¡Login exitoso!");
 
-      // Guardamos los tokens usando la nueva función de sesión de Simón
+      // Guardamos los tokens usando la nueva función de sesión
       const { accessToken, refreshToken } = response.data.data;
       await setTokens(accessToken, refreshToken);
+
+      // Inyectamos el token en la instancia global de axios para las peticiones inmediatas
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 
       // Leemos si existe la bandera de "primerLogin"
       const esPrimerLogin = await AsyncStorage.getItem('primerLogin');
@@ -63,7 +66,7 @@ export default function LoginScreen({ navigation }) {
           Alert.alert("Error", `Problema en el servidor: ${error.response.data.message || 'Inténtalo más tarde.'}`);
         }
       } else {
-        // Este es el error que te estaba tirando recién por la IP
+        // Este es el error si no hay conexión
         Alert.alert("Error de conexión", "No se pudo contactar al servidor. Revisá la IP en config.js y que el backend esté encendido.");
       }
     } finally {
@@ -100,7 +103,6 @@ export default function LoginScreen({ navigation }) {
             placeholderTextColor={colors.textSecondary}
           />
 
-          {/* Actualizado para usar la nueva pantalla de Simón */}
           <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('RecuperarPassword')}>
             <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
           </TouchableOpacity>
