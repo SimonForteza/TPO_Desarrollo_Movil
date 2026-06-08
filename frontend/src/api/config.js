@@ -1,2 +1,4 @@
-// Cambiá esta IP por la de tu máquina en la red local (ipconfig en Windows)
-export const API_URL = 'http://10.0.2.2:8080';
+// 10.0.2.2 = Android emulator → localhost del host
+// localhost = browser (web) o iOS simulator
+const isWeb = typeof document !== 'undefined';
+export const API_URL = isWeb ? 'http://localhost:8080' : 'http://10.0.2.2:8080';
