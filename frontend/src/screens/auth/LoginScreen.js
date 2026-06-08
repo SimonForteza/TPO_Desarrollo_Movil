@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-// Importamos las nuevas herramientas de la rama de Simón
+import { useState } from 'react';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { API_URL } from '../../api/config';
 import { setTokens } from '../../api/session';
 import { colors } from '../../theme/colors';
@@ -36,11 +36,22 @@ export default function LoginScreen({ navigation }) {
       const { accessToken, refreshToken } = response.data.data;
       await setTokens(accessToken, refreshToken);
 
-      // Vamos al Home y le pasamos los datos del usuario para que cambie el diseño
-      navigation.replace('Home', { 
-        user: response.data.data.usuario,
-        token: accessToken
-      });
+      // Leemos si existe la bandera de "primerLogin"
+      const esPrimerLogin = await AsyncStorage.getItem('primerLogin');
+
+      if (esPrimerLogin === 'true') {
+        // Como es su primera vez, borramos la bandera para que no lo vuelva a mandar acá en el futuro
+        await AsyncStorage.removeItem('primerLogin');
+        
+        // Lo mandamos a los métodos de pago (con el Token ya guardado en el sistema)
+        navigation.replace('AddPaymentMethod');
+      } else {
+        // Es un login normal de un usuario viejo, va al Home
+        navigation.replace('Home', { 
+          user: response.data.data.usuario,
+          token: accessToken
+        });
+      }
 
     } catch (error) {
       console.error("Error en login:", error.message);
