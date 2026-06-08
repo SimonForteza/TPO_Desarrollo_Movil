@@ -38,3 +38,9 @@ export async function getPendingRegistration() {
 export async function clearPendingRegistration() {
   await AsyncStorage.removeItem(PENDING_KEY);
 }
+
+// --- Datos del usuario logueado (en memoria) ---
+let _userData = null;
+export function setUserData(data) { _userData = data; }
+export function getUserData() { return _userData; }
+export function clearUserData() { _userData = null; }

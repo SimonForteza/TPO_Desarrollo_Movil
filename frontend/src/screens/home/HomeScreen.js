@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { API_URL } from '../../api/config';
 import { clearPendingRegistration, getPendingRegistration } from '../../api/session';
 import { colors } from '../../theme/colors';
+import BottomNavBar from '../../components/BottomNavBar';
 
 // Datos de prueba para simular lo que devolverá el backend
 const SUBASTAS_MOCK = [
@@ -79,7 +80,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         )}
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} style={{ marginBottom: 65 }}>
           
           {/* BARRA DE BÚSQUEDA */}
           <View style={styles.searchContainer}>
@@ -140,6 +141,10 @@ export default function HomeScreen({ navigation }) {
           </View>
 
         </ScrollView>
+
+        {/* BARRA DE NAVEGACIÓN INFERIOR */}
+        <BottomNavBar navigation={navigation} active="subastas" />
+
       </View>
     </SafeAreaView>
   );

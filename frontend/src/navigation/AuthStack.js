@@ -15,6 +15,7 @@ import RecuperarPassword from '../screens/auth/RecuperarPassword';
 import LinkEnviado from '../screens/auth/LinkEnviado';
 import ResetPassword from '../screens/auth/ResetPassword';
 import AddPaymentMethod from '../screens/payments/AddPaymentMethod';
+import ProfileScreen from '../screens/profile/ProfileScreen';
 import FormCuentaBancaria from '../screens/payments/FormCuentaBancaria';
 import FormTarjetaCredito from '../screens/payments/FormTarjetaCredito';
 import FormCheque from '../screens/payments/FormCheque';
@@ -101,10 +102,15 @@ export default function AuthStack() {
         component={ResetPassword}
         options={{ title: 'Nueva Contraseña', headerBackVisible: false }}
       />
-      <Stack.Screen 
-        name="AddPaymentMethod" 
-        component={AddPaymentMethod} 
-        options={{ title: 'Medios de pago' }} 
+      <Stack.Screen
+        name="Perfil"
+        component={ProfileScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="AddPaymentMethod"
+        component={AddPaymentMethod}
+        options={{ title: 'Medios de pago' }}
       />
       <Stack.Screen 
         name="FormCuentaBancaria" 
