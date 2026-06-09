@@ -52,6 +52,7 @@ export default function LoginScreen({ navigation }) {
         // Como es su primera vez, borramos la bandera para que no lo vuelva a mandar acá en el futuro
         await AsyncStorage.removeItem('primerLogin');
         
+        
         // Lo mandamos a los métodos de pago (con el Token ya guardado en el sistema)
         navigation.replace('AddPaymentMethod');
       } else {
