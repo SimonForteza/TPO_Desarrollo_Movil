@@ -27,8 +27,15 @@ export default function ProfileScreen({ navigation }) {
     ]);
   };
 
-  const proximamente = (titulo) =>
-    Alert.alert(titulo, 'Esta funcionalidad estará disponible próximamente.');
+  const MenuItem = ({ icon, label, onPress, destructive }) => (
+    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+      <View style={styles.menuLeft}>
+        <Ionicons name={icon} size={20} color={destructive ? '#EF4444' : colors.primary} />
+        <Text style={[styles.menuItemText, destructive && { color: '#EF4444' }]}>{label}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -37,7 +44,6 @@ export default function ProfileScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Avatar + datos */}
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{iniciales || '?'}</Text>
@@ -46,14 +52,13 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.email}>{email}</Text>
           {!!categoria && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{categoria}</Text>
+              <Text style={styles.badgeText}>{categoria.toUpperCase()}</Text>
             </View>
           )}
         </View>
 
-        {/* Estadísticas */}
         <View style={styles.statsRow}>
-          {[['0', 'Participaciones'], ['0', 'Ganadas'], ['0', 'Vendidas']].map(([val, label]) => (
+          {[['0', 'Subastas'], ['0', 'Ganadas'], ['0', 'Vendidas']].map(([val, label]) => (
             <View key={label} style={styles.statItem}>
               <Text style={styles.statValue}>{val}</Text>
               <Text style={styles.statLabel}>{label}</Text>
@@ -61,38 +66,13 @@ export default function ProfileScreen({ navigation }) {
           ))}
         </View>
 
-        <View style={styles.divider} />
-
-        {/* Gestión de la cuenta */}
-        <Text style={styles.sectionTitle}>Gestión de la Cuenta</Text>
-
-        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AddPaymentMethod')}>
-          <Text style={styles.menuItemText}>Medios de Pago</Text>
-          <View style={styles.menuArrow}>
-            <Ionicons name="chevron-forward" size={16} color={colors.surface} />
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem} onPress={() => proximamente('Historial de Participaciones')}>
-          <Text style={styles.menuItemText}>Historial de Participaciones</Text>
-          <View style={styles.menuArrow}>
-            <Ionicons name="chevron-forward" size={16} color={colors.surface} />
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem} onPress={() => proximamente('Configuración')}>
-          <Text style={styles.menuItemText}>Configuración</Text>
-          <View style={styles.menuArrow}>
-            <Ionicons name="chevron-forward" size={16} color={colors.surface} />
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem} onPress={handleCerrarSesion}>
-          <Text style={styles.menuItemText}>Cerrar Sesión</Text>
-          <View style={styles.menuArrow}>
-            <Ionicons name="chevron-forward" size={16} color={colors.surface} />
-          </View>
-        </TouchableOpacity>
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Gestión de la Cuenta</Text>
+          <MenuItem icon="card-outline" label="Medios de Pago" onPress={() => navigation.navigate('AddPaymentMethod')} />
+          <MenuItem icon="time-outline" label="Historial de Participaciones" onPress={() => Alert.alert('Info', 'Próximamente')} />
+          <MenuItem icon="settings-outline" label="Configuración" onPress={() => Alert.alert('Info', 'Próximamente')} />
+          <MenuItem icon="log-out-outline" label="Cerrar Sesión" onPress={handleCerrarSesion} destructive />
+        </View>
       </ScrollView>
 
       <BottomNavBar navigation={navigation} active="perfil" />
@@ -101,80 +81,24 @@ export default function ProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingTop: Platform.OS === 'android' ? 30 : 0,
-  },
-  header: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  headerTitle: {
-    color: colors.surface,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  scroll: { paddingBottom: 85 },
-  profileSection: {
-    alignItems: 'center',
-    paddingVertical: 30,
-    paddingHorizontal: 20,
-  },
-  avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  avatarText: { color: colors.surface, fontSize: 32, fontWeight: 'bold' },
-  nombre: { fontSize: 22, fontWeight: 'bold', color: colors.primary },
+  safeArea: { flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? 35 : 0 },
+  header: { alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: colors.textPrimary },
+  scroll: { paddingBottom: 100 },
+  profileSection: { alignItems: 'center', paddingVertical: 30 },
+  avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  avatarText: { color: colors.surface, fontSize: 36, fontWeight: 'bold' },
+  nombre: { fontSize: 22, fontWeight: 'bold', color: colors.textPrimary },
   email: { fontSize: 14, color: colors.textSecondary, marginTop: 4 },
-  badge: {
-    marginTop: 8,
-    backgroundColor: '#E8F0FB',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  badgeText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-  },
+  badge: { marginTop: 10, backgroundColor: '#EFF6FF', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6 },
+  badgeText: { color: colors.primary, fontWeight: '700', fontSize: 12 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingBottom: 30 },
   statItem: { alignItems: 'center' },
-  statValue: { fontSize: 22, fontWeight: 'bold', color: colors.primary },
-  statLabel: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
-  divider: { height: 1, backgroundColor: '#EEEEEE', marginHorizontal: 20, marginBottom: 20 },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.primary,
-    paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.primary,
-    marginHorizontal: 20,
-    marginBottom: 12,
-    borderRadius: 10,
-    padding: 16,
-  },
-  menuItemText: { color: colors.surface, fontSize: 16, fontWeight: '600' },
-  menuArrow: {
-    backgroundColor: colors.secondary,
-    borderRadius: 6,
-    padding: 4,
-  },
+  statValue: { fontSize: 20, fontWeight: 'bold', color: colors.textPrimary },
+  statLabel: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
+  sectionContainer: { paddingHorizontal: 20 },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: colors.textSecondary, marginBottom: 16, marginLeft: 4 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', padding: 18, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#F0F0F0' },
+  menuLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  menuItemText: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
 });
