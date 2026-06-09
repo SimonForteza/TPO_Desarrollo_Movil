@@ -69,7 +69,8 @@ public class SecurityConfig {
                                 "/subastas/**",
                                 "/auth/refresh",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/auth/resetear-password"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
