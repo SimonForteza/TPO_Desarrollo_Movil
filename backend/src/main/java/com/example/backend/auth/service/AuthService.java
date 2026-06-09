@@ -212,6 +212,16 @@ public class AuthService {
         return buildMeResponse(usuario);
     }
 
+
+public void validarRegistro(String email, String documento) {
+    if (usuarioRepository.existsByEmail(email)) {
+        throw new RuntimeException("El email ya está registrado.");
+    }
+    if (personaRepository.existsByDocumento(documento)) {
+        throw new RuntimeException("El documento ya está registrado.");
+    }
+}
+
     private UsuarioMeResponse buildMeResponse(Usuario usuario) {
         Cliente cliente = clienteRepository.findById(usuario.getClienteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Client profile not found"));
