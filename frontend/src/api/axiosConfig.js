@@ -2,19 +2,19 @@ import axios from 'axios';
 import { API_URL } from './config';
 import { getAccessToken } from './session';
 
-// Creamos una instancia configurada de Axios
 const api = axios.create({
   baseURL: API_URL,
 });
 
-// Interceptor: Antes de que salga CUALQUIER petición, le pegamos el Token
 api.interceptors.request.use(async (config) => {
   const token = await getAccessToken();
+  console.log("Token recuperado por el interceptor:", token); // <-- AGREGÁ ESTO
   
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    console.warn("No se encontró token en AsyncStorage"); // <-- AGREGÁ ESTO
   }
-  
   return config;
 }, (error) => {
   return Promise.reject(error);
