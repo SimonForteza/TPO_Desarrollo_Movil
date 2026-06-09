@@ -5,12 +5,15 @@ import api from '../../api/axiosConfig';
 import { clearPendingRegistration, getPendingRegistration } from '../../api/session';
 import BottomNavBar from '../../components/BottomNavBar';
 import { colors } from '../../theme/colors';
+import { getUserData } from '../../api/session';
 
 const CATEGORIAS = ['Todos', 'Tecnología', 'Vehículos', 'Inmuebles', 'Arte', 'Joyas'];
 
 export default function HomeScreen({ navigation, route }) {
-  const usuario = route.params?.user;
-  const nombreUsuario = usuario?.nombre || usuario?.email?.split('@')[0] || 'Usuario';
+
+  const usuarioSesion = getUserData();
+  const usuario = route.params?.user || usuarioSesion;
+  const nombreUsuario = usuario?.nombre || 'Invitado';
 
   const [kycAprobado, setKycAprobado] = useState(false);
   const [tokenActivacion, setTokenActivacion] = useState(null);
@@ -79,12 +82,11 @@ export default function HomeScreen({ navigation, route }) {
     navigation.navigate('CompleteRegistration', { tokenActivacion });
   };
 
-  //const subastasFiltradas = categoriaActiva === 'Todos' 
-  const subastasFiltradas = subastas;
-    // ? subastas 
-    // : subastas.filter(s => s.categoria && s.categoria.toLowerCase() === categoriaActiva.toLowerCase());
+  const subastasFiltradas = categoriaActiva === 'Todos' 
+    ? subastas 
+    : subastas.filter(s => s.categoria && s.categoria.toLowerCase() === categoriaActiva.toLowerCase());
 
-  // Función para formatear fechas (de '2026-06-25' a '25/06/2026')
+
   const formatearFecha = (fechaOriginal) => {
     if (!fechaOriginal) return 'Fecha a confirmar';
     const partes = fechaOriginal.split('-');
