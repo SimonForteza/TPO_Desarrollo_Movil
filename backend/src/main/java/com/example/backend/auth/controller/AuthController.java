@@ -1,5 +1,6 @@
 package com.example.backend.auth.controller;
 
+import com.example.backend.auth.repository.UsuarioRepository;
 import com.example.backend.auth.dto.*;
 import com.example.backend.auth.entity.Usuario;
 import com.example.backend.auth.kyc.KycSimulacionService;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import com.example.backend.legacy.repository.PersonaRepository;
 
 @RestController
 @RequestMapping("/auth")
@@ -17,10 +19,14 @@ public class AuthController {
 
     private final AuthService authService;
     private final KycSimulacionService kycSimulacionService;
+    private final UsuarioRepository usuarioRepository;
+    private final PersonaRepository personaRepository;
 
-    public AuthController(AuthService authService, KycSimulacionService kycSimulacionService) {
+    public AuthController(AuthService authService, KycSimulacionService kycSimulacionService, UsuarioRepository usuarioRepository, PersonaRepository personaRepository) {
         this.authService = authService;
         this.kycSimulacionService = kycSimulacionService;
+        this.usuarioRepository = usuarioRepository;
+        this.personaRepository = personaRepository;
     }
 
     @PostMapping("/registro")
@@ -73,6 +79,13 @@ public class AuthController {
         RecuperarPasswordResponse response = authService.recuperarPassword(req);
         return ResponseEntity.ok(ApiResponse.ok("If that email exists, a recovery token has been sent.", response));
     }
+
+    @GetMapping("/verificar-disponibilidad")
+    public ResponseEntity<?> verificar(@RequestParam String email, @RequestParam String documento) {
+    if (usuarioRepository.existsByEmail(email)) return ResponseEntity.badRequest().body("El email ya existe");
+    if (personaRepository.existsByDocumento(documento)) return ResponseEntity.badRequest().body("El documento ya está registrado");
+    return ResponseEntity.ok("Disponible");
+}
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UsuarioMeResponse>> me(
