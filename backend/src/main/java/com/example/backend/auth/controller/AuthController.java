@@ -93,4 +93,20 @@ public class AuthController {
         UsuarioMeResponse response = authService.me(usuario);
         return ResponseEntity.ok(ApiResponse.ok("User profile", response));
     }
+
+    @PutMapping("/perfil")
+    public ResponseEntity<ApiResponse<ActualizarPerfilResponse>> actualizarPerfil(
+            @AuthenticationPrincipal Usuario usuario,
+            @Valid @RequestBody ActualizarPerfilRequest req) {
+        ActualizarPerfilResponse response = authService.actualizarPerfil(usuario, req);
+        return ResponseEntity.ok(ApiResponse.ok("Profile updated", response));
+    }
+
+    @PostMapping("/cambiar-password")
+    public ResponseEntity<ApiResponse<Void>> cambiarPassword(
+            @AuthenticationPrincipal Usuario usuario,
+            @Valid @RequestBody CambiarPasswordRequest req) {
+        authService.cambiarPassword(usuario, req);
+        return ResponseEntity.ok(ApiResponse.ok("Password changed successfully", null));
+    }
 }

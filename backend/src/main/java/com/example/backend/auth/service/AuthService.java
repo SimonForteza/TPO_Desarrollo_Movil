@@ -212,6 +212,46 @@ public class AuthService {
         return buildMeResponse(usuario);
     }
 
+    public ActualizarPerfilResponse actualizarPerfil(Usuario usuarioAuth, ActualizarPerfilRequest req) {
+        Usuario usuario = usuarioRepository.findById(usuarioAuth.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Cliente cliente = clienteRepository.findById(usuario.getClienteId())
+                .orElseThrow(() -> new ResourceNotFoundException("Client profile not found"));
+        Persona persona = cliente.getPersona();
+
+        persona.setNombre(req.nombre());
+        persona.setDireccion(req.direccion());
+
+        if (!usuario.getEmail().equalsIgnoreCase(req.email())) {
+            if (usuarioRepository.existsByEmail(req.email())) {
+                throw new ConflictException("Email already registered");
+            }
+            usuario.setEmail(req.email());
+        }
+
+        String accessToken = jwtUtil.generateAccessToken(usuario);
+        String refreshToken = jwtUtil.generateRefreshToken(usuario);
+        usuario.setRefreshToken(refreshToken);
+
+        return new ActualizarPerfilResponse(buildMeResponse(usuario), accessToken, refreshToken);
+    }
+
+    public void cambiarPassword(Usuario usuarioAuth, CambiarPasswordRequest req) {
+        Usuario usuario = usuarioRepository.findById(usuarioAuth.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(req.passwordActual(), usuario.getPasswordHash())) {
+            throw new BusinessRuleException("Contraseña actual incorrecta");
+        }
+        if (!req.passwordNueva().equals(req.passwordConfirmacion())) {
+            throw new BusinessRuleException("Passwords do not match");
+        }
+
+        usuario.setPasswordHash(passwordEncoder.encode(req.passwordNueva()));
+        usuario.setRefreshToken(null);
+    }
+
 
 public void validarRegistro(String email, String documento) {
     if (usuarioRepository.existsByEmail(email)) {

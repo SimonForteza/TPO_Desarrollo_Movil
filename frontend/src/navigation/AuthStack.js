@@ -19,6 +19,12 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import FormCuentaBancaria from '../screens/payments/FormCuentaBancaria';
 import FormTarjetaCredito from '../screens/payments/FormTarjetaCredito';
 import FormCheque from '../screens/payments/FormCheque';
+import Configuracion from '../screens/settings/Configuracion';
+import CuentaSeguridad from '../screens/settings/CuentaSeguridad';
+import EditarPerfil from '../screens/settings/EditarPerfil';
+import CambiarPassword from '../screens/settings/CambiarPassword';
+import Notificaciones from '../screens/settings/Notificaciones';
+import Preferencias from '../screens/settings/Preferencias';
 
 const Stack = createNativeStackNavigator();
 
@@ -122,10 +128,42 @@ export default function AuthStack() {
         component={FormTarjetaCredito} 
         options={{ title: 'Agregar tarjeta' }} 
       />
-      <Stack.Screen 
-        name="FormCheque" 
-        component={FormCheque} 
-        options={{ title: 'Agregar cheque' }} 
+      <Stack.Screen
+        name="FormCheque"
+        component={FormCheque}
+        options={{ title: 'Agregar cheque' }}
+      />
+
+      {/* --- FLUJO DE CONFIGURACIÓN --- */}
+      <Stack.Screen
+        name="Configuracion"
+        component={Configuracion}
+        options={{ title: 'Configuración' }}
+      />
+      <Stack.Screen
+        name="CuentaSeguridad"
+        component={CuentaSeguridad}
+        options={{ title: 'Cuenta y Seguridad' }}
+      />
+      <Stack.Screen
+        name="EditarPerfil"
+        component={EditarPerfil}
+        options={{ title: 'Editar Perfil' }}
+      />
+      <Stack.Screen
+        name="CambiarPassword"
+        component={CambiarPassword}
+        options={{ title: 'Cambiar Contraseña' }}
+      />
+      <Stack.Screen
+        name="Notificaciones"
+        component={Notificaciones}
+        options={{ title: 'Notificaciones' }}
+      />
+      <Stack.Screen
+        name="Preferencias"
+        component={Preferencias}
+        options={{ title: 'Preferencias' }}
       />
     </Stack.Navigator>
   );
