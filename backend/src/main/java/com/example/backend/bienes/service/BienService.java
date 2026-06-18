@@ -4,6 +4,7 @@ import com.example.backend.auth.entity.Usuario;
 import com.example.backend.bienes.dto.*;
 import com.example.backend.bienes.entity.BienEnConsignacion;
 import com.example.backend.bienes.repository.BienRepository;
+import com.example.backend.bienes.util.EstadoBien;
 import com.example.backend.cuentascobro.repository.CuentaCobroRepository;
 import com.example.backend.legacy.entity.*;
 import com.example.backend.legacy.repository.*;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 public class BienService {
 
     private static final Set<String> ESTADOS_CON_UBICACION =
-            Set.of("en_inspeccion", "aceptado", "asignado", "vendido");
+            Set.of("en_inspeccion", "aceptado", EstadoBien.APROBADO, EstadoBien.ASIGNADO, EstadoBien.VENDIDO);
 
     private final BienRepository bienRepository;
     private final CuentaCobroRepository cuentaCobroRepository;
@@ -34,31 +35,29 @@ public class BienService {
     private final DuenioRepository duenioRepository;
     private final ProductoRepository productoRepository;
     private final FotoRepository fotoRepository;
+    private final BienMapper bienMapper;
 
     public BienService(BienRepository bienRepository,
                        CuentaCobroRepository cuentaCobroRepository,
                        ClienteRepository clienteRepository,
                        DuenioRepository duenioRepository,
                        ProductoRepository productoRepository,
-                       FotoRepository fotoRepository) {
+                       FotoRepository fotoRepository,
+                       BienMapper bienMapper) {
         this.bienRepository = bienRepository;
         this.cuentaCobroRepository = cuentaCobroRepository;
         this.clienteRepository = clienteRepository;
         this.duenioRepository = duenioRepository;
         this.productoRepository = productoRepository;
         this.fotoRepository = fotoRepository;
+        this.bienMapper = bienMapper;
     }
 
     @Transactional(readOnly = true)
     public PagedResponse<BienListItem> list(Usuario usuario, Pageable pageable) {
         Page<BienEnConsignacion> page = bienRepository.findByUsuarioId(usuario.getId(), pageable);
         List<BienListItem> content = page.getContent().stream()
-                .map(b -> {
-                    Producto p = productoRepository.findById(b.getProductoId()).orElse(null);
-                    String desc = p != null ? p.getDescripcionCatalogo() : null;
-                    return new BienListItem(b.getId(), b.getEstado(), desc, b.getUbicacionDeposito(),
-                            b.getPrecioBasePropuesto(), b.getComisionPropuesta(), b.getCreadaEn());
-                })
+                .map(bienMapper::toListItem)
                 .collect(Collectors.toList());
         return new PagedResponse<>(content, page.getNumber(), page.getSize(),
                 page.getTotalElements(), page.getTotalPages());
@@ -105,21 +104,19 @@ public class BienService {
         BienEnConsignacion bien = new BienEnConsignacion();
         bien.setUsuarioId(usuario.getId());
         bien.setProductoId(producto.getIdentificador());
-        bien.setEstado("solicitado");
+        bien.setEstado(EstadoBien.PENDIENTE_REVISION);
         bien.setDeclaracionPropiedad(true);
         bien.setOrigenLicitoAcreditado(true);
         bienRepository.save(bien);
 
-        return toDetail(bien, producto);
+        return bienMapper.toDetail(bien);
     }
 
     @Transactional(readOnly = true)
     public BienDetail detail(Usuario usuario, Long id) {
         BienEnConsignacion bien = bienRepository.findByIdAndUsuarioId(id, usuario.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Consignment not found: " + id));
-        Producto producto = productoRepository.findById(bien.getProductoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-        return toDetail(bien, producto);
+        return bienMapper.toDetail(bien);
     }
 
     public BienDetail aceptarCondiciones(Usuario usuario, Long id, AceptarCondicionesRequest req) {
@@ -136,9 +133,7 @@ public class BienService {
         bien.setEstado(Boolean.TRUE.equals(req.acepta()) ? "aceptado" : "rechazado");
         bienRepository.save(bien);
 
-        Producto producto = productoRepository.findById(bien.getProductoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-        return toDetail(bien, producto);
+        return bienMapper.toDetail(bien);
     }
 
     @Transactional(readOnly = true)
@@ -152,30 +147,7 @@ public class BienService {
 
         Producto producto = productoRepository.findById(bien.getProductoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-        SeguroSummary seguroSummary = toSeguroSummary(producto.getSeguro());
+        SeguroSummary seguroSummary = bienMapper.toSeguroSummary(producto.getSeguro());
         return new UbicacionPolizaResponse(bien.getUbicacionDeposito(), seguroSummary);
-    }
-
-    private BienDetail toDetail(BienEnConsignacion bien, Producto producto) {
-        List<String> fotos = fotoRepository.findByProductoIdentificador(producto.getIdentificador())
-                .stream()
-                .map(f -> b64(f.getFoto()))
-                .collect(Collectors.toList());
-        SeguroSummary seguroSummary = toSeguroSummary(producto.getSeguro());
-        return new BienDetail(
-                bien.getId(), bien.getEstado(),
-                producto.getDescripcionCatalogo(), producto.getDescripcionCompleta(),
-                fotos, bien.getUbicacionDeposito(),
-                bien.getPrecioBasePropuesto(), bien.getComisionPropuesta(),
-                seguroSummary, bien.getCreadaEn());
-    }
-
-    private SeguroSummary toSeguroSummary(Seguro seguro) {
-        if (seguro == null) return null;
-        return new SeguroSummary(seguro.getNroPoliza(), seguro.getCompania(), seguro.getImporte());
-    }
-
-    private String b64(byte[] bytes) {
-        return bytes == null ? null : Base64.getEncoder().encodeToString(bytes);
     }
 }

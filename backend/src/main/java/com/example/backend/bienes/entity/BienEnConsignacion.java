@@ -41,6 +41,12 @@ public class BienEnConsignacion {
     @Column(name = "ubicacion_deposito")
     private String ubicacionDeposito;
 
+    @Column(name = "motivo_rechazo", length = 300)
+    private String motivoRechazo;
+
+    @Column(name = "subasta_id")
+    private Integer subastaId;
+
     @Column(name = "creada_en", nullable = false)
     private LocalDateTime creadaEn = LocalDateTime.now();
 }
