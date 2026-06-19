@@ -86,22 +86,20 @@ export default function MisProductos({ navigation }) {
         </View>
 
         <View style={styles.chipsRow}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {CHIPS.map((chip) => {
-              const active = filtro === chip.key;
-              return (
-                <TouchableOpacity
-                  key={chip.key}
-                  style={[styles.chip, active && styles.chipActive]}
-                  onPress={() => setFiltro(chip.key)}
-                >
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                    {chip.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+          {CHIPS.map((chip) => {
+            const active = filtro === chip.key;
+            return (
+              <TouchableOpacity
+                key={chip.key}
+                style={[styles.chip, active && styles.chipActive]}
+                onPress={() => setFiltro(chip.key)}
+              >
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  {chip.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {loading ? (
@@ -236,13 +234,20 @@ const styles = StyleSheet.create({
   },
   solicitarBtnText: { color: colors.surface, fontWeight: 'bold', fontSize: 14 },
 
-  chipsRow: { paddingLeft: 20, marginBottom: 8 },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
   chip: {
     backgroundColor: '#F2F2F2',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    marginRight: 10,
+    marginHorizontal: 5,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: '#E5E5E5',
   },
