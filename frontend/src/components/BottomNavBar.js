@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { colors } from '../theme/colors';
 
 // active: 'subastas' | 'productos' | 'perfil'
@@ -15,7 +15,7 @@ export default function BottomNavBar({ navigation, active }) {
       key: 'productos',
       label: 'Mis Productos',
       icon: 'cube-outline',
-      onPress: () => Alert.alert('Mis Productos', 'Esta funcionalidad estará disponible próximamente.'),
+      onPress: () => navigation.navigate('MisProductos'),
     },
     {
       key: 'perfil',

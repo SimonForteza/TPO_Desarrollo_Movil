@@ -1,53 +1,54 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import api from '../../api/axiosConfig'; 
-import { clearPendingRegistration, getPendingRegistration } from '../../api/session';
+import { ActivityIndicator, Image, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import api from '../../api/axiosConfig';
+import { getSubastas } from '../../api/subastas';
+import { clearPendingRegistration, getPendingRegistration, getUserData } from '../../api/session';
 import BottomNavBar from '../../components/BottomNavBar';
 import { colors } from '../../theme/colors';
-import { getUserData } from '../../api/session';
 
-const CATEGORIAS = ['Todos', 'Tecnología', 'Vehículos', 'Inmuebles', 'Arte', 'Joyas'];
+const CHIPS = ['Todas', 'En vivo', 'Programadas', 'ARS', 'USD'];
+
+const esEnVivo = (s) => s.estado && s.estado.toLowerCase() === 'abierta';
+
+function capitalizar(txt) {
+  if (!txt) return '';
+  return txt.charAt(0).toUpperCase() + txt.slice(1);
+}
+
+function formatearFecha(fechaOriginal) {
+  if (!fechaOriginal) return 'Fecha a confirmar';
+  const partes = String(fechaOriginal).split('-');
+  return partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : fechaOriginal;
+}
 
 export default function HomeScreen({ navigation, route }) {
-
   const usuarioSesion = getUserData();
   const usuario = route.params?.user || usuarioSesion;
   const nombreUsuario = usuario?.nombre || 'Invitado';
+  const categoriaUsuario = usuario?.categoria;
 
   const [kycAprobado, setKycAprobado] = useState(false);
   const [tokenActivacion, setTokenActivacion] = useState(null);
-  const [categoriaActiva, setCategoriaActiva] = useState('Todos');
-  
+  const [chipActivo, setChipActivo] = useState('Todas');
+  const [busqueda, setBusqueda] = useState('');
+
   const [subastas, setSubastas] = useState([]);
   const [loadingSubastas, setLoadingSubastas] = useState(true);
-  
+
   const intervalRef = useRef(null);
 
   useEffect(() => {
     const fetchSubastas = async () => {
       try {
-        const response = await api.get('/subastas'); 
-        const data = response.data.data || response.data;
-        
-        let listaSubastas = [];
-        if (Array.isArray(data)) {
-          listaSubastas = data;
-        } else if (data && Array.isArray(data.content)) {
-          listaSubastas = data.content; 
-        } else if (data && Array.isArray(data.items)) {
-          listaSubastas = data.items; 
-        }
-
-        console.log("Datos recibidos del backend:", data);
-        setSubastas(listaSubastas);
+        const data = await getSubastas();
+        setSubastas(data);
       } catch (error) {
-        console.error("Error al cargar subastas:", error);
+        console.error('Error al cargar subastas:', error);
       } finally {
         setLoadingSubastas(false);
       }
     };
-
     fetchSubastas();
   }, []);
 
@@ -82,33 +83,47 @@ export default function HomeScreen({ navigation, route }) {
     navigation.navigate('CompleteRegistration', { tokenActivacion });
   };
 
-  const subastasFiltradas = categoriaActiva === 'Todos' 
-    ? subastas 
-    : subastas.filter(s => s.categoria && s.categoria.toLowerCase() === categoriaActiva.toLowerCase());
+  // Filtrado por búsqueda + chip de moneda
+  let base = subastas;
+  if (busqueda.trim()) {
+    const q = busqueda.trim().toLowerCase();
+    base = base.filter(
+      (s) =>
+        (s.ubicacion && s.ubicacion.toLowerCase().includes(q)) ||
+        (s.categoria && s.categoria.toLowerCase().includes(q))
+    );
+  }
+  if (chipActivo === 'ARS') base = base.filter((s) => s.moneda === 'ARS');
+  if (chipActivo === 'USD') base = base.filter((s) => s.moneda === 'USD');
 
+  const enVivo = base.filter(esEnVivo);
+  const proximas = base.filter((s) => !esEnVivo(s));
 
-  const formatearFecha = (fechaOriginal) => {
-    if (!fechaOriginal) return 'Fecha a confirmar';
-    const partes = fechaOriginal.split('-');
-    if (partes.length === 3) {
-      return `${partes[2]}/${partes[1]}/${partes[0]}`;
-    }
-    return fechaOriginal;
-  };
+  const mostrarEnVivo = chipActivo !== 'Programadas';
+  const mostrarProximas = chipActivo !== 'En vivo';
+
+  const totalVisible =
+    (mostrarEnVivo ? enVivo.length : 0) + (mostrarProximas ? proximas.length : 0);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
         <View style={styles.header}>
           <View style={styles.headerTextContainer}>
-            <Text style={styles.greeting}>Hola,</Text>
-            <Text style={styles.userName}>{nombreUsuario}</Text>
+            <Text style={styles.greeting}>Hola, {nombreUsuario}</Text>
+            <Text style={styles.userName}>Subastas</Text>
           </View>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="notifications-outline" size={24} color={colors.textPrimary} />
-            <View style={styles.notificationDot} />
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            {categoriaUsuario ? (
+              <View style={styles.categoriaChip}>
+                <Text style={styles.categoriaChipText}>Categoría: {capitalizar(categoriaUsuario)}</Text>
+              </View>
+            ) : null}
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons name="notifications-outline" size={22} color={colors.primary} />
+              <View style={styles.notificationDot} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {kycAprobado && (
@@ -123,92 +138,60 @@ export default function HomeScreen({ navigation, route }) {
         )}
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          
           <View style={styles.searchContainer}>
             <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
-            <TextInput 
+            <TextInput
               style={styles.searchInput}
               placeholder="Buscar subastas..."
               placeholderTextColor={colors.textSecondary}
+              value={busqueda}
+              onChangeText={setBusqueda}
             />
-            <TouchableOpacity style={styles.filterIcon}>
-              <Ionicons name="options-outline" size={20} color={colors.primary} />
-            </TouchableOpacity>
           </View>
 
-          <View style={styles.section}>
+          <View style={styles.chipsSection}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-              {CATEGORIAS.map((cat, index) => (
-                <TouchableOpacity 
-                  key={index} 
-                  style={[styles.chip, categoriaActiva === cat && styles.chipActive]}
-                  onPress={() => setCategoriaActiva(cat)}
+              {CHIPS.map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={[styles.chip, chipActivo === cat && styles.chipActive]}
+                  onPress={() => setChipActivo(cat)}
                 >
-                  <Text style={[styles.chipText, categoriaActiva === cat && styles.chipTextActive]}>{cat}</Text>
+                  <Text style={[styles.chipText, chipActivo === cat && styles.chipTextActive]}>{cat}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
 
-         <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Subastas Destacadas</Text>
-              <TouchableOpacity>
-                <Text style={styles.seeAllText}>Ver todas</Text>
-              </TouchableOpacity>
+          {loadingSubastas ? (
+            <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 30 }} />
+          ) : totalVisible === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="calendar-outline" size={52} color={colors.textSecondary} />
+              <Text style={styles.emptyTitle}>No hay subastas disponibles por el momento.</Text>
+              <Text style={styles.emptySubtitle}>
+                Cuando la casa de subastas publique una nueva, aparecerá acá.
+              </Text>
             </View>
+          ) : (
+            <>
+              {mostrarEnVivo && enVivo.length > 0 && (
+                <Seccion titulo="En vivo" subtitulo={`${enVivo.length} activas`} live>
+                  {enVivo.map((item) => (
+                    <SubastaCard key={item.id} item={item} navigation={navigation} live />
+                  ))}
+                </Seccion>
+              )}
 
-            {loadingSubastas ? (
-              <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
-            ) : subastasFiltradas.length === 0 ? (
-              <Text style={styles.emptyText}>No hay eventos de subasta en esta categoría.</Text>
-            ) : (
-              subastasFiltradas.map((item, index) => {
-                const isOpen = item.estado && item.estado.toLowerCase() === 'abierta';
-                
-                return (
-                  <TouchableOpacity 
-                    key={item.identificador || item.id || index} 
-                    style={styles.cardVertical}
-                  >
-                    <View style={styles.imagePlaceholderLarge}>
-                      <Ionicons name="calendar-outline" size={50} color={colors.textSecondary} />
-                      
-                      <View style={[styles.timeBadgeFloating, { backgroundColor: isOpen ? 'rgba(16, 185, 129, 0.9)' : 'rgba(0,0,0,0.6)' }]}>
-                        <Ionicons name={isOpen ? "ellipse" : "time"} size={10} color={colors.surface} />
-                        <Text style={styles.timeTextFloating}>
-                          {item.estado ? item.estado.toUpperCase() : 'PROGRAMADA'}
-                        </Text>
-                      </View>
-                    </View>
-                    
-                    <View style={styles.cardDetailsVertical}>
-                      <Text style={styles.cardCategory}>
-                        {item.categoria ? item.categoria.toUpperCase() : 'SUBASTA GENERAL'}
-                      </Text>
-                      
-                      <Text style={styles.cardTitle} numberOfLines={1}>
-                        Evento en {item.ubicacion || 'Sede Central'}
-                      </Text>
-                      
-                      <View style={styles.cardFooter}>
-                        <View>
-                          <Text style={styles.priceLabel}>Fecha y Hora</Text>
-                          <Text style={styles.priceValue}>
-                            {formatearFecha(item.fecha)} • {item.hora ? item.hora.substring(0,5) : '00:00'} hs
-                          </Text>
-                        </View>
-                        <TouchableOpacity style={styles.bidButton}>
-                          <Text style={styles.bidButtonText}>Ver catálogo</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })
-            )}
-          </View>
-
+              {mostrarProximas && proximas.length > 0 && (
+                <Seccion titulo="Próximas subastas">
+                  {proximas.map((item) => (
+                    <SubastaCard key={item.id} item={item} navigation={navigation} />
+                  ))}
+                </Seccion>
+              )}
+            </>
+          )}
         </ScrollView>
 
         <BottomNavBar navigation={navigation} active="subastas" />
@@ -217,53 +200,113 @@ export default function HomeScreen({ navigation, route }) {
   );
 }
 
+function Seccion({ titulo, subtitulo, live, children }) {
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {live ? <View style={styles.liveDot} /> : null}
+          <Text style={styles.sectionTitle}>{titulo}</Text>
+        </View>
+        {subtitulo ? <Text style={styles.sectionSubtitle}>{subtitulo}</Text> : null}
+      </View>
+      {children}
+    </View>
+  );
+}
+
+function SubastaCard({ item, navigation, live }) {
+  return (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate('DetalleSubasta', { id: item.id })}
+    >
+      <View style={styles.cardThumb}>
+        {item.primeraFotoBase64 ? (
+          <Image source={{ uri: `data:image/jpeg;base64,${item.primeraFotoBase64}` }} style={styles.cardThumbImage} />
+        ) : (
+          <Ionicons name="image-outline" size={26} color={colors.textSecondary} />
+        )}
+      </View>
+      <View style={styles.cardInfo}>
+        <Text style={styles.cardTitle} numberOfLines={1}>Subasta #{item.id}</Text>
+        <Text style={styles.cardSubtitle} numberOfLines={1}>
+          {(item.ubicacion || 'Sede a confirmar')} · {item.moneda || ''}
+        </Text>
+        <View style={styles.cardBadges}>
+          <View style={[styles.statusBadge, { backgroundColor: live ? colors.success : '#9CA3AF' }]}>
+            <Text style={styles.statusBadgeText}>{live ? 'en vivo' : (item.estado || 'programada')}</Text>
+          </View>
+          {item.categoria ? (
+            <View style={styles.catBadge}>
+              <Text style={styles.catBadgeText}>{capitalizar(item.categoria)}</Text>
+            </View>
+          ) : null}
+        </View>
+        {!live ? (
+          <Text style={styles.cardFecha}>
+            {formatearFecha(item.fecha)}{item.hora ? ` · ${String(item.hora).substring(0, 5)} hs` : ''}
+          </Text>
+        ) : null}
+      </View>
+      <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? 35 : 0 },
   container: { flex: 1 },
-  
+
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 15 },
   headerTextContainer: { justifyContent: 'center' },
   greeting: { fontSize: 13, color: colors.textSecondary },
-  userName: { fontSize: 22, fontWeight: 'bold', color: colors.primary },
-  
-  iconButton: { backgroundColor: '#F3F3F3', padding: 10, borderRadius: 50, position: 'relative' },
-  notificationDot: { position: 'absolute', top: 10, right: 12, width: 8, height: 8, backgroundColor: colors.secondary, borderRadius: 4, borderWidth: 1, borderColor: '#FFF' },
-  
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', marginHorizontal: 20, borderRadius: 14, paddingHorizontal: 15, marginBottom: 20, borderWidth: 1, borderColor: '#EAEAEA' },
+  userName: { fontSize: 24, fontWeight: 'bold', color: colors.primary },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  categoriaChip: { backgroundColor: colors.secondary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
+  categoriaChipText: { color: colors.surface, fontWeight: 'bold', fontSize: 12 },
+
+  iconButton: { backgroundColor: '#F3F3F3', padding: 9, borderRadius: 50, position: 'relative' },
+  notificationDot: { position: 'absolute', top: 9, right: 11, width: 8, height: 8, backgroundColor: colors.secondary, borderRadius: 4, borderWidth: 1, borderColor: '#FFF' },
+
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', marginHorizontal: 20, borderRadius: 14, paddingHorizontal: 15, marginBottom: 18, borderWidth: 1, borderColor: '#EAEAEA' },
   searchIcon: { marginRight: 10 },
   searchInput: { flex: 1, paddingVertical: 14, fontSize: 15, color: colors.textPrimary },
-  filterIcon: { paddingLeft: 10, borderLeftWidth: 1, borderLeftColor: '#E0E0E0' },
-  
-  section: { marginBottom: 25 },
+
+  chipsSection: { marginBottom: 22 },
   horizontalScroll: { paddingLeft: 20 },
-  chip: { backgroundColor: '#F5F5F5', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, marginRight: 12 },
+  chip: { backgroundColor: '#F5F5F5', paddingHorizontal: 18, paddingVertical: 9, borderRadius: 20, marginRight: 10 },
   chipActive: { backgroundColor: colors.primary },
   chipText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
   chipTextActive: { color: colors.surface },
-  
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 15 },
+
+  section: { marginBottom: 24 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 14 },
+  liveDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.success, marginRight: 8 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: colors.textPrimary },
-  seeAllText: { fontSize: 14, color: colors.primary, fontWeight: '600' },
-  
-  emptyText: { textAlign: 'center', color: colors.textSecondary, marginTop: 20 },
-  
-  cardVertical: { backgroundColor: '#FFFFFF', marginHorizontal: 20, marginBottom: 20, borderRadius: 16, borderWidth: 1, borderColor: '#F0F0F0', overflow: 'hidden' },
-  imagePlaceholderLarge: { width: '100%', height: 160, backgroundColor: '#EAEAEA', justifyContent: 'center', alignItems: 'center', position: 'relative' },
-  timeBadgeFloating: { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20 },
-  timeTextFloating: { color: colors.surface, fontSize: 12, fontWeight: 'bold', marginLeft: 6 },
-  cardDetailsVertical: { padding: 16 },
-  cardCategory: { fontSize: 12, color: colors.secondary, fontWeight: 'bold', marginBottom: 4 },
-  cardTitle: { fontSize: 18, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 12 },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderTopWidth: 1, borderTopColor: '#F0F0F0', paddingTop: 12 },
-  priceLabel: { fontSize: 12, color: colors.textSecondary },
-  priceValue: { fontSize: 16, fontWeight: 'bold', color: colors.primary, marginTop: 2 },
-  bidButton: { backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  bidButtonText: { color: colors.surface, fontWeight: 'bold', fontSize: 14 },
-  
-  kycBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#10B981', marginHorizontal: 20, marginBottom: 20, borderRadius: 12, padding: 14, gap: 12 },
+  sectionSubtitle: { fontSize: 13, color: colors.textSecondary },
+
+  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, marginHorizontal: 20, marginBottom: 14, borderRadius: 14, borderWidth: 1, borderColor: '#ECECEC', padding: 12 },
+  cardThumb: { width: 64, height: 64, borderRadius: 10, backgroundColor: '#F2F2F2', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginRight: 12 },
+  cardThumbImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  cardInfo: { flex: 1 },
+  cardTitle: { fontSize: 16, fontWeight: 'bold', color: colors.textPrimary },
+  cardSubtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 2, marginBottom: 6 },
+  cardBadges: { flexDirection: 'row', gap: 6 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
+  statusBadgeText: { color: colors.surface, fontSize: 11, fontWeight: 'bold', textTransform: 'capitalize' },
+  catBadge: { backgroundColor: '#EEE', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
+  catBadgeText: { color: colors.textPrimary, fontSize: 11, fontWeight: '600' },
+  cardFecha: { fontSize: 12, color: colors.textSecondary, marginTop: 6 },
+
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, paddingTop: 50 },
+  emptyTitle: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, textAlign: 'center', marginTop: 16 },
+  emptySubtitle: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: 8 },
+
+  kycBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.success, marginHorizontal: 20, marginBottom: 20, borderRadius: 12, padding: 14, gap: 12 },
   kycBannerText: { flex: 1 },
   kycBannerTitle: { color: colors.surface, fontWeight: 'bold', fontSize: 15 },
   kycBannerSubtitle: { color: colors.surface, fontSize: 12, marginTop: 2 },
-  
+
   scrollContent: { paddingBottom: 100 },
 });

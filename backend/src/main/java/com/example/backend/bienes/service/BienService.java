@@ -5,7 +5,6 @@ import com.example.backend.bienes.dto.*;
 import com.example.backend.bienes.entity.BienEnConsignacion;
 import com.example.backend.bienes.repository.BienRepository;
 import com.example.backend.bienes.util.EstadoBien;
-import com.example.backend.cuentascobro.repository.CuentaCobroRepository;
 import com.example.backend.legacy.entity.*;
 import com.example.backend.legacy.repository.*;
 import com.example.backend.shared.dto.PagedResponse;
@@ -30,7 +29,6 @@ public class BienService {
             Set.of("en_inspeccion", "aceptado", EstadoBien.APROBADO, EstadoBien.ASIGNADO, EstadoBien.VENDIDO);
 
     private final BienRepository bienRepository;
-    private final CuentaCobroRepository cuentaCobroRepository;
     private final ClienteRepository clienteRepository;
     private final DuenioRepository duenioRepository;
     private final ProductoRepository productoRepository;
@@ -38,14 +36,12 @@ public class BienService {
     private final BienMapper bienMapper;
 
     public BienService(BienRepository bienRepository,
-                       CuentaCobroRepository cuentaCobroRepository,
                        ClienteRepository clienteRepository,
                        DuenioRepository duenioRepository,
                        ProductoRepository productoRepository,
                        FotoRepository fotoRepository,
                        BienMapper bienMapper) {
         this.bienRepository = bienRepository;
-        this.cuentaCobroRepository = cuentaCobroRepository;
         this.clienteRepository = clienteRepository;
         this.duenioRepository = duenioRepository;
         this.productoRepository = productoRepository;
@@ -64,23 +60,18 @@ public class BienService {
     }
 
     public BienDetail solicitar(Usuario usuario, BienRequest req) {
-        if (!cuentaCobroRepository.existsByUsuarioId(usuario.getId())) {
-            throw new BusinessRuleException("At least one payment account must be declared before consigning");
-        }
-
         Cliente cliente = clienteRepository.findById(usuario.getClienteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Client profile not found"));
 
         Duenio duenio = duenioRepository.findById(cliente.getIdentificador()).orElseGet(() -> {
             Duenio d = new Duenio();
-            d.setIdentificador(cliente.getIdentificador());
             d.setPersona(cliente.getPersona());
             d.setPais(cliente.getPais());
             d.setVerificacionFinanciera("no");
             d.setVerificacionJudicial("no");
             d.setCalificacionRiesgo(1);
             d.setVerificador(cliente.getVerificador());
-            return duenioRepository.save(d);
+            return duenioRepository.saveAndFlush(d);
         });
 
         Producto producto = new Producto();

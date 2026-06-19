@@ -25,6 +25,11 @@ import EditarPerfil from '../screens/settings/EditarPerfil';
 import CambiarPassword from '../screens/settings/CambiarPassword';
 import Notificaciones from '../screens/settings/Notificaciones';
 import Preferencias from '../screens/settings/Preferencias';
+import MisProductos from '../screens/products/MisProductos';
+import DetalleProducto from '../screens/products/DetalleProducto';
+import SolicitarSubastaInfo from '../screens/products/SolicitarSubastaInfo';
+import SolicitarSubastaForm from '../screens/products/SolicitarSubastaForm';
+import DetalleSubasta from '../screens/subastas/DetalleSubasta';
 
 const Stack = createNativeStackNavigator();
 
@@ -164,6 +169,39 @@ export default function AuthStack() {
         name="Preferencias"
         component={Preferencias}
         options={{ title: 'Preferencias' }}
+      />
+
+      {/* --- FLUJO DE PRODUCTOS / BIENES --- */}
+      <Stack.Screen
+        name="MisProductos"
+        component={MisProductos}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="DetalleProducto"
+        component={DetalleProducto}
+        options={{ title: 'Detalle del producto' }}
+      />
+      <Stack.Screen
+        name="SolicitarSubastaInfo"
+        component={SolicitarSubastaInfo}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="SolicitarSubastaForm"
+        component={SolicitarSubastaForm}
+        options={{
+          title: 'Solicitar Subasta',
+          headerTintColor: colors.secondary,        // flecha naranja (Figma)
+          headerTitleStyle: { fontWeight: 'bold', color: colors.surface }, // título blanco
+        }}
+      />
+
+      {/* --- DETALLE DE SUBASTA --- */}
+      <Stack.Screen
+        name="DetalleSubasta"
+        component={DetalleSubasta}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );
