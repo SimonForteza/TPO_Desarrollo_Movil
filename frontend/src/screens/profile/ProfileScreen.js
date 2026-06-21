@@ -1,11 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { Alert, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { clearTokens, clearUserData, getUserData } from '../../api/session';
 import { colors } from '../../theme/colors';
 import BottomNavBar from '../../components/BottomNavBar';
 
 export default function ProfileScreen({ navigation }) {
-  const user = getUserData();
+  const [user, setUser] = useState(getUserData());
+
+  // Recargar los datos del usuario al volver a esta pantalla (ej. tras editar el perfil)
+  useFocusEffect(
+    useCallback(() => {
+      setUser(getUserData());
+    }, [])
+  );
+
   const nombre = user?.nombre ?? '';
   const apellido = user?.apellido ?? '';
   const email = user?.email ?? '';
@@ -70,7 +80,7 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.sectionTitle}>Gestión de la Cuenta</Text>
           <MenuItem icon="card-outline" label="Medios de Pago" onPress={() => navigation.navigate('AddPaymentMethod')} />
           <MenuItem icon="time-outline" label="Historial de Participaciones" onPress={() => Alert.alert('Info', 'Próximamente')} />
-          <MenuItem icon="settings-outline" label="Configuración" onPress={() => Alert.alert('Info', 'Próximamente')} />
+          <MenuItem icon="settings-outline" label="Configuración" onPress={() => navigation.navigate('Configuracion')} />
           <MenuItem icon="log-out-outline" label="Cerrar Sesión" onPress={handleCerrarSesion} destructive />
         </View>
       </ScrollView>

@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface BienRepository extends JpaRepository<BienEnConsignacion, Long> {
     Page<BienEnConsignacion> findByUsuarioId(Long usuarioId, Pageable pageable);
     Optional<BienEnConsignacion> findByIdAndUsuarioId(Long id, Long usuarioId);
+    Page<BienEnConsignacion> findByEstado(String estado, Pageable pageable);
+    Page<BienEnConsignacion> findByEstadoAndSubastaIdIsNull(String estado, Pageable pageable);
 }
