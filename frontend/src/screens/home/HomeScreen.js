@@ -1,206 +1,183 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import api from '../../api/axiosConfig'; 
-import { clearPendingRegistration, getPendingRegistration } from '../../api/session';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator, Platform, SafeAreaView, ScrollView,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from 'react-native';
+import api from '../../api/axiosConfig';
+import { getUserData, setUserData } from '../../api/session';
 import BottomNavBar from '../../components/BottomNavBar';
 import { colors } from '../../theme/colors';
-import { getUserData } from '../../api/session';
 
-const CATEGORIAS = ['Todos', 'Tecnología', 'Vehículos', 'Inmuebles', 'Arte', 'Joyas'];
+const FILTROS_MONEDA = [
+  { label: 'Todas', value: null },
+  { label: 'ARS', value: 'ARS' },
+  { label: 'USD', value: 'USD' },
+];
 
-export default function HomeScreen({ navigation, route }) {
-
-  const usuarioSesion = getUserData();
-  const usuario = route.params?.user || usuarioSesion;
-  const nombreUsuario = usuario?.nombre || 'Invitado';
-
-  const [kycAprobado, setKycAprobado] = useState(false);
-  const [tokenActivacion, setTokenActivacion] = useState(null);
-  const [categoriaActiva, setCategoriaActiva] = useState('Todos');
-  
+export default function HomeScreen({ navigation }) {
+  const [usuario, setUsuario] = useState(getUserData());
+  const [monedaActiva, setMonedaActiva] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
   const [subastas, setSubastas] = useState([]);
-  const [loadingSubastas, setLoadingSubastas] = useState(true);
-  
-  const intervalRef = useRef(null);
+  const [loading, setLoading] = useState(true);
 
+  // Cargar datos del usuario si no están en memoria (ej: después de un reinicio)
   useEffect(() => {
-    const fetchSubastas = async () => {
-      try {
-        const response = await api.get('/subastas'); 
-        const data = response.data.data || response.data;
-        
-        let listaSubastas = [];
-        if (Array.isArray(data)) {
-          listaSubastas = data;
-        } else if (data && Array.isArray(data.content)) {
-          listaSubastas = data.content; 
-        } else if (data && Array.isArray(data.items)) {
-          listaSubastas = data.items; 
-        }
-
-        console.log("Datos recibidos del backend:", data);
-        setSubastas(listaSubastas);
-      } catch (error) {
-        console.error("Error al cargar subastas:", error);
-      } finally {
-        setLoadingSubastas(false);
-      }
-    };
-
-    fetchSubastas();
+    if (usuario) return;
+    api.get('/auth/me')
+      .then(res => {
+        setUserData(res.data.data);
+        setUsuario(res.data.data);
+      })
+      .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    const startKycPolling = async () => {
-      const usuarioId = await getPendingRegistration();
-      if (!usuarioId) return;
-
-      intervalRef.current = setInterval(async () => {
-        try {
-          const res = await api.get(`/auth/kyc-estado/${usuarioId}`);
-          const data = res.data.data;
-          if (data?.aprobado === true) {
-            clearInterval(intervalRef.current);
-            setTokenActivacion(data.tokenActivacion);
-            setKycAprobado(true);
-          }
-        } catch (error) {
-          if (error.response?.status === 404) {
-            clearInterval(intervalRef.current);
-            await clearPendingRegistration();
-          }
-        }
-      }, 5000);
-    };
-
-    startKycPolling();
-    return () => clearInterval(intervalRef.current);
-  }, []);
-
-  const handleCompletarRegistro = () => {
-    navigation.navigate('CompleteRegistration', { tokenActivacion });
-  };
-
-  const subastasFiltradas = categoriaActiva === 'Todos' 
-    ? subastas 
-    : subastas.filter(s => s.categoria && s.categoria.toLowerCase() === categoriaActiva.toLowerCase());
-
-
-  const formatearFecha = (fechaOriginal) => {
-    if (!fechaOriginal) return 'Fecha a confirmar';
-    const partes = fechaOriginal.split('-');
-    if (partes.length === 3) {
-      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  const cargarSubastas = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (monedaActiva) params.moneda = monedaActiva;
+      const res = await api.get('/subastas', { params });
+      const data = res.data.data;
+      setSubastas(data?.content ?? []);
+    } catch (error) {
+      console.error('Error al cargar subastas:', error);
+    } finally {
+      setLoading(false);
     }
-    return fechaOriginal;
+  }, [monedaActiva]);
+
+  useEffect(() => {
+    cargarSubastas();
+  }, [cargarSubastas]);
+
+  const subastasFiltradas = subastas.filter(s => {
+    if (!busqueda.trim()) return true;
+    const q = busqueda.toLowerCase();
+    return (
+      s.ubicacion?.toLowerCase().includes(q) ||
+      s.categoria?.toLowerCase().includes(q) ||
+      s.estado?.toLowerCase().includes(q)
+    );
+  });
+
+  const formatearFecha = (fecha) => {
+    if (!fecha) return 'A confirmar';
+    const [y, m, d] = fecha.split('-');
+    return `${d}/${m}/${y}`;
   };
+
+  const nombreUsuario = usuario?.nombre || 'Invitado';
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
+
         <View style={styles.header}>
-          <View style={styles.headerTextContainer}>
+          <View>
             <Text style={styles.greeting}>Hola,</Text>
             <Text style={styles.userName}>{nombreUsuario}</Text>
           </View>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="notifications-outline" size={24} color={colors.textPrimary} />
-            <View style={styles.notificationDot} />
+          <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Perfil')}>
+            <Ionicons name="person-circle-outline" size={28} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
-        {kycAprobado && (
-          <TouchableOpacity style={styles.kycBanner} onPress={handleCompletarRegistro}>
-            <Ionicons name="shield-checkmark" size={24} color={colors.surface} />
-            <View style={styles.kycBannerText}>
-              <Text style={styles.kycBannerTitle}>Identidad verificada</Text>
-              <Text style={styles.kycBannerSubtitle}>Tocá aquí para activar tu cuenta.</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.surface} />
-          </TouchableOpacity>
-        )}
-
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Búsqueda */}
           <View style={styles.searchContainer}>
             <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
-            <TextInput 
+            <TextInput
               style={styles.searchInput}
-              placeholder="Buscar subastas..."
+              placeholder="Buscar por ubicación o categoría..."
               placeholderTextColor={colors.textSecondary}
+              value={busqueda}
+              onChangeText={setBusqueda}
             />
-            <TouchableOpacity style={styles.filterIcon}>
-              <Ionicons name="options-outline" size={20} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.section}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-              {CATEGORIAS.map((cat, index) => (
-                <TouchableOpacity 
-                  key={index} 
-                  style={[styles.chip, categoriaActiva === cat && styles.chipActive]}
-                  onPress={() => setCategoriaActiva(cat)}
-                >
-                  <Text style={[styles.chipText, categoriaActiva === cat && styles.chipTextActive]}>{cat}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-         <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Subastas Destacadas</Text>
-              <TouchableOpacity>
-                <Text style={styles.seeAllText}>Ver todas</Text>
+            {busqueda.length > 0 && (
+              <TouchableOpacity onPress={() => setBusqueda('')}>
+                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Filtro por moneda */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
+            {FILTROS_MONEDA.map((f) => (
+              <TouchableOpacity
+                key={f.label}
+                style={[styles.chip, monedaActiva === f.value && styles.chipActive]}
+                onPress={() => setMonedaActiva(f.value)}
+              >
+                <Text style={[styles.chipText, monedaActiva === f.value && styles.chipTextActive]}>
+                  {f.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Lista de subastas */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Subastas disponibles</Text>
+              <Text style={styles.sectionCount}>{subastasFiltradas.length} encontradas</Text>
             </View>
 
-            {loadingSubastas ? (
-              <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+            {loading ? (
+              <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 30 }} />
             ) : subastasFiltradas.length === 0 ? (
-              <Text style={styles.emptyText}>No hay eventos de subasta en esta categoría.</Text>
+              <View style={styles.emptyContainer}>
+                <Ionicons name="search-outline" size={48} color={colors.textSecondary} />
+                <Text style={styles.emptyText}>No hay subastas disponibles</Text>
+                <Text style={styles.emptySubtext}>Probá con otros filtros</Text>
+              </View>
             ) : (
-              subastasFiltradas.map((item, index) => {
-                const isOpen = item.estado && item.estado.toLowerCase() === 'abierta';
-                
+              subastasFiltradas.map((item) => {
+                const abierta = item.estado?.toLowerCase() === 'abierta';
                 return (
-                  <TouchableOpacity 
-                    key={item.identificador || item.id || index} 
-                    style={styles.cardVertical}
+                  <TouchableOpacity
+                    key={item.identificador}
+                    style={styles.card}
+                    onPress={() => navigation.navigate('SubastaDetalle', { subastaId: item.identificador })}
+                    activeOpacity={0.85}
                   >
-                    <View style={styles.imagePlaceholderLarge}>
-                      <Ionicons name="calendar-outline" size={50} color={colors.textSecondary} />
-                      
-                      <View style={[styles.timeBadgeFloating, { backgroundColor: isOpen ? 'rgba(16, 185, 129, 0.9)' : 'rgba(0,0,0,0.6)' }]}>
-                        <Ionicons name={isOpen ? "ellipse" : "time"} size={10} color={colors.surface} />
-                        <Text style={styles.timeTextFloating}>
-                          {item.estado ? item.estado.toUpperCase() : 'PROGRAMADA'}
-                        </Text>
+                    <View style={styles.cardImagePlaceholder}>
+                      <Ionicons name="hammer-outline" size={40} color={colors.textSecondary} />
+                      <View style={[styles.estadoBadge, { backgroundColor: abierta ? '#10B981' : '#6B7280' }]}>
+                        <Text style={styles.estadoBadgeText}>{item.estado?.toUpperCase() ?? 'PROGRAMADA'}</Text>
                       </View>
                     </View>
-                    
-                    <View style={styles.cardDetailsVertical}>
-                      <Text style={styles.cardCategory}>
-                        {item.categoria ? item.categoria.toUpperCase() : 'SUBASTA GENERAL'}
-                      </Text>
-                      
+
+                    <View style={styles.cardBody}>
+                      <View style={styles.cardTags}>
+                        <View style={styles.tag}>
+                          <Text style={styles.tagText}>{item.categoria?.toUpperCase()}</Text>
+                        </View>
+                        <View style={[styles.tag, styles.tagMoneda]}>
+                          <Text style={styles.tagText}>{item.moneda ?? '—'}</Text>
+                        </View>
+                      </View>
+
                       <Text style={styles.cardTitle} numberOfLines={1}>
-                        Evento en {item.ubicacion || 'Sede Central'}
+                        {item.ubicacion ?? 'Sede Central'}
                       </Text>
-                      
+
                       <View style={styles.cardFooter}>
-                        <View>
-                          <Text style={styles.priceLabel}>Fecha y Hora</Text>
-                          <Text style={styles.priceValue}>
-                            {formatearFecha(item.fecha)} • {item.hora ? item.hora.substring(0,5) : '00:00'} hs
+                        <View style={styles.fechaRow}>
+                          <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
+                          <Text style={styles.fechaText}>
+                            {formatearFecha(item.fecha)} · {item.hora?.substring(0, 5) ?? '00:00'} hs
                           </Text>
                         </View>
-                        <TouchableOpacity style={styles.bidButton}>
-                          <Text style={styles.bidButtonText}>Ver catálogo</Text>
-                        </TouchableOpacity>
+                        <View style={styles.verBtn}>
+                          <Text style={styles.verBtnText}>Ver catálogo</Text>
+                          <Ionicons name="chevron-forward" size={14} color={colors.surface} />
+                        </View>
                       </View>
                     </View>
                   </TouchableOpacity>
@@ -208,7 +185,6 @@ export default function HomeScreen({ navigation, route }) {
               })
             )}
           </View>
-
         </ScrollView>
 
         <BottomNavBar navigation={navigation} active="subastas" />
@@ -220,50 +196,47 @@ export default function HomeScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? 35 : 0 },
   container: { flex: 1 },
-  
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 15 },
-  headerTextContainer: { justifyContent: 'center' },
+  scrollContent: { paddingBottom: 100 },
+
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16, paddingTop: 4 },
   greeting: { fontSize: 13, color: colors.textSecondary },
   userName: { fontSize: 22, fontWeight: 'bold', color: colors.primary },
-  
-  iconButton: { backgroundColor: '#F3F3F3', padding: 10, borderRadius: 50, position: 'relative' },
-  notificationDot: { position: 'absolute', top: 10, right: 12, width: 8, height: 8, backgroundColor: colors.secondary, borderRadius: 4, borderWidth: 1, borderColor: '#FFF' },
-  
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', marginHorizontal: 20, borderRadius: 14, paddingHorizontal: 15, marginBottom: 20, borderWidth: 1, borderColor: '#EAEAEA' },
+  iconButton: { padding: 4 },
+
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', marginHorizontal: 20, borderRadius: 14, paddingHorizontal: 15, marginBottom: 16, borderWidth: 1, borderColor: '#EAEAEA' },
   searchIcon: { marginRight: 10 },
-  searchInput: { flex: 1, paddingVertical: 14, fontSize: 15, color: colors.textPrimary },
-  filterIcon: { paddingLeft: 10, borderLeftWidth: 1, borderLeftColor: '#E0E0E0' },
-  
-  section: { marginBottom: 25 },
-  horizontalScroll: { paddingLeft: 20 },
-  chip: { backgroundColor: '#F5F5F5', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20, marginRight: 12 },
+  searchInput: { flex: 1, paddingVertical: 13, fontSize: 15, color: colors.textPrimary },
+
+  chipsScroll: { paddingLeft: 20, marginBottom: 20 },
+  chip: { backgroundColor: '#F5F5F5', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginRight: 10 },
   chipActive: { backgroundColor: colors.primary },
   chipText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
   chipTextActive: { color: colors.surface },
-  
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 15 },
+
+  section: { paddingHorizontal: 20 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: colors.textPrimary },
-  seeAllText: { fontSize: 14, color: colors.primary, fontWeight: '600' },
-  
-  emptyText: { textAlign: 'center', color: colors.textSecondary, marginTop: 20 },
-  
-  cardVertical: { backgroundColor: '#FFFFFF', marginHorizontal: 20, marginBottom: 20, borderRadius: 16, borderWidth: 1, borderColor: '#F0F0F0', overflow: 'hidden' },
-  imagePlaceholderLarge: { width: '100%', height: 160, backgroundColor: '#EAEAEA', justifyContent: 'center', alignItems: 'center', position: 'relative' },
-  timeBadgeFloating: { position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20 },
-  timeTextFloating: { color: colors.surface, fontSize: 12, fontWeight: 'bold', marginLeft: 6 },
-  cardDetailsVertical: { padding: 16 },
-  cardCategory: { fontSize: 12, color: colors.secondary, fontWeight: 'bold', marginBottom: 4 },
-  cardTitle: { fontSize: 18, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 12 },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderTopWidth: 1, borderTopColor: '#F0F0F0', paddingTop: 12 },
-  priceLabel: { fontSize: 12, color: colors.textSecondary },
-  priceValue: { fontSize: 16, fontWeight: 'bold', color: colors.primary, marginTop: 2 },
-  bidButton: { backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  bidButtonText: { color: colors.surface, fontWeight: 'bold', fontSize: 14 },
-  
-  kycBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#10B981', marginHorizontal: 20, marginBottom: 20, borderRadius: 12, padding: 14, gap: 12 },
-  kycBannerText: { flex: 1 },
-  kycBannerTitle: { color: colors.surface, fontWeight: 'bold', fontSize: 15 },
-  kycBannerSubtitle: { color: colors.surface, fontSize: 12, marginTop: 2 },
-  
-  scrollContent: { paddingBottom: 100 },
+  sectionCount: { fontSize: 13, color: colors.textSecondary },
+
+  emptyContainer: { alignItems: 'center', paddingVertical: 40 },
+  emptyText: { fontSize: 16, color: colors.textSecondary, marginTop: 12, fontWeight: '600' },
+  emptySubtext: { fontSize: 13, color: colors.textSecondary, marginTop: 4 },
+
+  card: { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 20, borderWidth: 1, borderColor: '#F0F0F0', overflow: 'hidden' },
+  cardImagePlaceholder: { width: '100%', height: 130, backgroundColor: '#EAEAEA', justifyContent: 'center', alignItems: 'center', position: 'relative' },
+  estadoBadge: { position: 'absolute', top: 12, left: 12, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  estadoBadgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: 'bold' },
+
+  cardBody: { padding: 16 },
+  cardTags: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  tag: { backgroundColor: '#FFF0E0', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+  tagMoneda: { backgroundColor: '#E8F0FE' },
+  tagText: { fontSize: 11, fontWeight: 'bold', color: colors.textSecondary },
+  cardTitle: { fontSize: 17, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 12 },
+
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#F0F0F0', paddingTop: 12 },
+  fechaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  fechaText: { fontSize: 13, color: colors.textSecondary },
+  verBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, gap: 4 },
+  verBtnText: { color: colors.surface, fontWeight: 'bold', fontSize: 13 },
 });

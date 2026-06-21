@@ -19,6 +19,7 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import FormCuentaBancaria from '../screens/payments/FormCuentaBancaria';
 import FormTarjetaCredito from '../screens/payments/FormTarjetaCredito';
 import FormCheque from '../screens/payments/FormCheque';
+import SubastaDetalle from '../screens/subastas/SubastaDetalle';
 
 const Stack = createNativeStackNavigator();
 
@@ -122,10 +123,15 @@ export default function AuthStack() {
         component={FormTarjetaCredito} 
         options={{ title: 'Agregar tarjeta' }} 
       />
-      <Stack.Screen 
-        name="FormCheque" 
-        component={FormCheque} 
-        options={{ title: 'Agregar cheque' }} 
+      <Stack.Screen
+        name="FormCheque"
+        component={FormCheque}
+        options={{ title: 'Agregar cheque' }}
+      />
+      <Stack.Screen
+        name="SubastaDetalle"
+        component={SubastaDetalle}
+        options={{ title: 'Detalle de Subasta' }}
       />
     </Stack.Navigator>
   );

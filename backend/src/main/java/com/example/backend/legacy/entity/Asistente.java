@@ -7,6 +7,10 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "asistentes")
+@SecondaryTable(
+    name = "asistentes_medio_pago",
+    pkJoinColumns = @PrimaryKeyJoinColumn(name = "asistente_id")
+)
 @Getter @Setter @NoArgsConstructor
 public class Asistente {
 
@@ -26,6 +30,6 @@ public class Asistente {
     @JoinColumn(name = "subasta")
     private Subasta subasta;
 
-    @Column(name = "medio_pago_id")
+    @Column(name = "medio_pago_id", table = "asistentes_medio_pago")
     private Long medioPagoId;
 }
