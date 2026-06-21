@@ -4,7 +4,9 @@ import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity,
 import api from '../../api/axiosConfig';
 import { colors } from '../../theme/colors';
 
-export default function AddPaymentMethod({ navigation }) {
+export default function AddPaymentMethod({ route, navigation }) {
+  const { esPrimerIngreso } = route.params || {};
+  
   const [medios, setMedios] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +39,7 @@ export default function AddPaymentMethod({ navigation }) {
           onPress: async () => {
             try {
               await api.delete(`/medios-pago/${id}`);
-              fetchMedios(); // Recargamos la lista tras eliminar
+              fetchMedios(); 
             } catch (error) {
               Alert.alert("Error", "No se pudo eliminar el medio de pago.");
             }
@@ -89,7 +91,15 @@ export default function AddPaymentMethod({ navigation }) {
           renderItem={renderItem}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContent}
-          ListEmptyComponent={<Text style={styles.emptyText}>No tenés medios de pago asociados.</Text>}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="card-outline" size={60} color={colors.textSecondary} style={{ marginBottom: 15 }} />
+              <Text style={styles.emptyTitle}>Sin medios de pago</Text>
+              <Text style={styles.emptySubtitle}>
+                Necesitás agregar un método de pago válido para poder participar y pujar en las subastas.
+              </Text>
+            </View>
+          }
         />
       )}
 
@@ -107,6 +117,17 @@ export default function AddPaymentMethod({ navigation }) {
         >
           <Text style={styles.addButtonText}>+ Agregar nuevo medio</Text>
         </TouchableOpacity>
+
+        {esPrimerIngreso && (
+          <TouchableOpacity 
+            style={styles.skipButton} 
+            onPress={() => navigation.replace('Home')}
+          >
+            <Text style={styles.skipButtonText}>
+              {medios.length > 0 ? "Continuar al inicio" : "Saltar por ahora"}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -120,9 +141,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderWidth: 1, borderColor: '#EAEAEA', elevation: 2 
   },
-  cardInfo: { flexDirection: 'row', alignItems: 'center' },
+  cardInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   iconContainer: { backgroundColor: '#F5F8FF', padding: 10, borderRadius: 10 },
-  textContainer: { marginLeft: 12 },
+  textContainer: { marginLeft: 12, flex: 1 },
   cardTitle: { fontWeight: 'bold', fontSize: 16, color: colors.textPrimary },
   cardSubtitle: { fontSize: 14, color: colors.textSecondary },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -132,5 +153,20 @@ const styles = StyleSheet.create({
   footer: { padding: 20 },
   addButton: { backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: 'center' },
   addButtonText: { color: colors.surface, fontWeight: 'bold', fontSize: 16 },
-  emptyText: { textAlign: 'center', color: colors.textSecondary, marginTop: 40 }
+  
+  // Estilos del estado vacío (Empty State)
+  emptyContainer: { alignItems: 'center', marginTop: 50, paddingHorizontal: 20 },
+  emptyTitle: { fontSize: 20, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 8 },
+  emptySubtitle: { fontSize: 15, color: colors.textSecondary, textAlign: 'center', lineHeight: 22 },
+
+  skipButton: { 
+    marginTop: 12, 
+    padding: 16, 
+    borderRadius: 12, 
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: 'transparent'
+  },
+  skipButtonText: { color: colors.primary, fontWeight: 'bold', fontSize: 16 }
 });
