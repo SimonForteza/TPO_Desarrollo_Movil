@@ -187,7 +187,7 @@ export default function HomeScreen({ navigation, route }) {
               {mostrarEnVivo && enVivo.length > 0 && (
                 <Seccion titulo="En vivo" subtitulo={`${enVivo.length} activas`} live>
                   {enVivo.map((item) => (
-                    <SubastaCard key={item.identificador} item={item} navigation={navigation} live />
+                    <SubastaCard key={item.id} item={item} navigation={navigation} live />
                   ))}
                 </Seccion>
               )}
@@ -195,7 +195,7 @@ export default function HomeScreen({ navigation, route }) {
               {mostrarProximas && proximas.length > 0 && (
                 <Seccion titulo="Próximas subastas">
                   {proximas.map((item) => (
-                    <SubastaCard key={item.identificador} item={item} navigation={navigation} />
+                    <SubastaCard key={item.id} item={item} navigation={navigation} />
                   ))}
                 </Seccion>
               )}
@@ -228,7 +228,7 @@ function SubastaCard({ item, navigation, live }) {
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('DetalleSubasta', { id: item.identificador })}
+      onPress={() => navigation.navigate('DetalleSubasta', { id: item.id })}
     >
       <View style={styles.cardThumb}>
         {item.primeraFotoBase64 ? (
@@ -238,7 +238,7 @@ function SubastaCard({ item, navigation, live }) {
         )}
       </View>
       <View style={styles.cardInfo}>
-        <Text style={styles.cardTitle} numberOfLines={1}>Subasta #{item.identificador}</Text>
+        <Text style={styles.cardTitle} numberOfLines={1}>Subasta #{item.id}</Text>
         <Text style={styles.cardSubtitle} numberOfLines={1}>
           {(item.ubicacion || 'Sede a confirmar')} · {item.moneda || ''}
         </Text>

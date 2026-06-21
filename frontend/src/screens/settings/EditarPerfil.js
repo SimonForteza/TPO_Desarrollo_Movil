@@ -42,7 +42,7 @@ export default function EditarPerfil({ navigation }) {
         Alert.alert('Error', 'Ese email ya está registrado por otro usuario.');
       } else if (error.response?.status === 401) {
         Alert.alert('Sesión expirada', 'Por favor, volvé a iniciar sesión.');
-        navigation.replace('Welcome');
+        navigation.replace('Home');
       } else {
         Alert.alert('Error', 'No se pudo actualizar el perfil.');
       }

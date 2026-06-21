@@ -21,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,10 +47,12 @@ public class SubastaService {
 
     public PagedResponse<SubastaListItem> list(Usuario usuario, String estado, String moneda,
                                                String categoria, Pageable pageable) {
-        Cliente cliente = loadCliente(usuario);
-        List<String> allowed = Categoria.allowedFor(cliente.getCategoria());
+        // Invitado: ve todas las categorías (efecto vidriera)
+        List<String> allowed = usuario != null
+                ? Categoria.allowedFor(loadCliente(usuario).getCategoria())
+                : Arrays.stream(Categoria.values()).map(Categoria::getDbValue).collect(Collectors.toList());
 
-        if (categoria != null && !allowed.contains(categoria)) {
+        if (usuario != null && categoria != null && !allowed.contains(categoria)) {
             return new PagedResponse<>(List.of(), pageable.getPageNumber(), pageable.getPageSize(), 0, 0);
         }
 
@@ -64,10 +67,13 @@ public class SubastaService {
     }
 
     public SubastaDetailResponse detail(Usuario usuario, Integer id) {
-        Cliente cliente = loadCliente(usuario);
         Subasta subasta = subastaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found: " + id));
-        assertAccess(cliente, subasta.getCategoria());
+
+        // Usuarios logueados: verificar que su categoría tenga acceso
+        if (usuario != null) {
+            assertAccess(loadCliente(usuario), subasta.getCategoria());
+        }
 
         SubastadorSummary subastadorSummary = null;
         Subastador sub = subasta.getSubastador();
@@ -85,13 +91,18 @@ public class SubastaService {
     }
 
     public PagedResponse<CatalogoItemListResponse> catalogo(Usuario usuario, Integer subastaId, Pageable pageable) {
-        Cliente cliente = loadCliente(usuario);
         Subasta subasta = subastaRepository.findById(subastaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found: " + subastaId));
-        assertAccess(cliente, subasta.getCategoria());
 
-        boolean admitido = "si".equals(cliente.getAdmitido());
+        boolean admitido = false;
+        if (usuario != null) {
+            Cliente cliente = loadCliente(usuario);
+            assertAccess(cliente, subasta.getCategoria());
+            admitido = "si".equals(cliente.getAdmitido());
+        }
+
         Page<ItemCatalogo> page = itemCatalogoRepository.findByCatalogoSubastaIdentificador(subastaId, pageable);
+        final boolean showPrices = admitido;
 
         List<CatalogoItemListResponse> content = page.getContent().stream()
                 .map(item -> {
@@ -102,7 +113,7 @@ public class SubastaService {
                             producto.getIdentificador(), producto.getDescripcionCatalogo(), primeraFoto);
                     return new CatalogoItemListResponse(
                             item.getIdentificador(), item.getSubastado(),
-                            admitido ? item.getPrecioBase() : null,
+                            showPrices ? item.getPrecioBase() : null,
                             productoSummary);
                 })
                 .collect(Collectors.toList());
@@ -112,10 +123,15 @@ public class SubastaService {
     }
 
     public CatalogoItemDetailResponse itemDetail(Usuario usuario, Integer subastaId, Integer itemId) {
-        Cliente cliente = loadCliente(usuario);
         Subasta subasta = subastaRepository.findById(subastaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found: " + subastaId));
-        assertAccess(cliente, subasta.getCategoria());
+
+        boolean admitido = false;
+        if (usuario != null) {
+            Cliente cliente = loadCliente(usuario);
+            assertAccess(cliente, subasta.getCategoria());
+            admitido = "si".equals(cliente.getAdmitido());
+        }
 
         ItemCatalogo item = itemCatalogoRepository
                 .findByIdentificadorAndCatalogoSubastaIdentificador(itemId, subastaId)
@@ -127,7 +143,6 @@ public class SubastaService {
                 .map(f -> b64(f.getFoto()))
                 .collect(Collectors.toList());
 
-        boolean admitido = "si".equals(cliente.getAdmitido());
         ProductoDetail productoDetail = new ProductoDetail(
                 producto.getIdentificador(), producto.getDescripcionCatalogo(),
                 producto.getDescripcionCompleta(), fotosBase64);

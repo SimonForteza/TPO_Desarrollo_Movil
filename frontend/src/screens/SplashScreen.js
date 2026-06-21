@@ -4,15 +4,13 @@ import axios from 'axios';
 import { API_URL } from '../api/config';
 import {
   getAccessToken, getRefreshToken, setTokens, clearTokens,
-  getPendingRegistration, clearPendingRegistration,
   setUserData,
 } from '../api/session';
 import { colors } from '../theme/colors';
 
 export default function SplashScreen({ navigation }) {
   useEffect(() => {
-    const resolveNavigation = async () => {
-      // 1. Si hay token guardado, intentar ir directo al Home
+    const resolveSession = async () => {
       const accessToken = await getAccessToken();
       if (accessToken) {
         try {
@@ -20,22 +18,18 @@ export default function SplashScreen({ navigation }) {
             headers: { Authorization: `Bearer ${accessToken}` },
           });
           setUserData(meRes.data.data);
-          return () => navigation.replace('Home');
         } catch (error) {
           if (error.response?.status === 401) {
-            // Token expirado: intentar renovar
             const refreshToken = await getRefreshToken();
             if (refreshToken) {
               try {
                 const refreshRes = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
                 const { accessToken: newAccess, refreshToken: newRefresh } = refreshRes.data.data;
                 await setTokens(newAccess, newRefresh);
-
                 const meRes2 = await axios.get(`${API_URL}/auth/me`, {
                   headers: { Authorization: `Bearer ${newAccess}` },
                 });
                 setUserData(meRes2.data.data);
-                return () => navigation.replace('Home');
               } catch (_) {
                 await clearTokens();
               }
@@ -43,32 +37,13 @@ export default function SplashScreen({ navigation }) {
               await clearTokens();
             }
           }
-          // Error de red u otro: no borrar el token, ir a Welcome
         }
       }
-
-      // 2. Sin sesión activa: chequear registro pendiente (KYC)
-      const usuarioId = await getPendingRegistration();
-      if (!usuarioId) return () => navigation.replace('Welcome');
-
-      try {
-        const res = await axios.get(`${API_URL}/auth/kyc-estado/${usuarioId}`);
-        const data = res.data.data;
-
-        if (data?.aprobado === true) {
-          return () => navigation.replace('CompleteRegistration', { tokenActivacion: data.tokenActivacion });
-        }
-        return () => navigation.replace('VerificationPending', { usuarioId: Number(usuarioId) });
-      } catch (error) {
-        if (error.response?.status === 404) {
-          await clearPendingRegistration();
-        }
-        return () => navigation.replace('Welcome');
-      }
+      // Siempre va al Home — con o sin sesión (efecto vidriera)
     };
 
-    const minDelay = new Promise(resolve => setTimeout(resolve, 2500));
-    Promise.all([resolveNavigation(), minDelay]).then(([navigate]) => navigate());
+    const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+    Promise.all([resolveSession(), minDelay]).then(() => navigation.replace('Home'));
   }, [navigation]);
 
   return (

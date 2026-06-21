@@ -9,18 +9,11 @@ import BottomNavBar from '../../components/BottomNavBar';
 export default function ProfileScreen({ navigation }) {
   const [user, setUser] = useState(getUserData());
 
-  // Recargar los datos del usuario al volver a esta pantalla (ej. tras editar el perfil)
   useFocusEffect(
     useCallback(() => {
       setUser(getUserData());
     }, [])
   );
-
-  const nombre = user?.nombre ?? '';
-  const apellido = user?.apellido ?? '';
-  const email = user?.email ?? '';
-  const categoria = user?.categoria ?? '';
-  const iniciales = `${nombre.charAt(0)}${apellido.charAt(0)}`.toUpperCase();
 
   const handleCerrarSesion = () => {
     Alert.alert('Cerrar sesión', '¿Seguro que querés salir?', [
@@ -28,14 +21,47 @@ export default function ProfileScreen({ navigation }) {
       {
         text: 'Salir',
         style: 'destructive',
-        onPress: () => {
-          clearTokens();
+        onPress: async () => {
+          await clearTokens();
           clearUserData();
-          navigation.replace('Welcome');
+          navigation.replace('Home');
         },
       },
     ]);
   };
+
+  // Vista invitado
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Mi Perfil</Text>
+        </View>
+        <View style={styles.guestContainer}>
+          <View style={styles.avatar}>
+            <Ionicons name="person-outline" size={48} color={colors.surface} />
+          </View>
+          <Text style={styles.guestTitle}>Invitado</Text>
+          <Text style={styles.guestSubtitle}>
+            Iniciá sesión para acceder a tu perfil, historial de participaciones, medios de pago y más.
+          </Text>
+          <TouchableOpacity style={styles.loginBtn} onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.loginBtnText}>Iniciar sesión</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.registerBtn} onPress={() => navigation.navigate('RegisterStep1')}>
+            <Text style={styles.registerBtnText}>Crear cuenta</Text>
+          </TouchableOpacity>
+        </View>
+        <BottomNavBar navigation={navigation} active="perfil" />
+      </SafeAreaView>
+    );
+  }
+
+  const nombre = user?.nombre ?? '';
+  const apellido = user?.apellido ?? '';
+  const email = user?.email ?? '';
+  const categoria = user?.categoria ?? '';
+  const iniciales = `${nombre.charAt(0)}${apellido.charAt(0)}`.toUpperCase();
 
   const MenuItem = ({ icon, label, onPress, destructive }) => (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
@@ -95,6 +121,17 @@ const styles = StyleSheet.create({
   header: { alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: colors.textPrimary },
   scroll: { paddingBottom: 100 },
+
+  // Vista invitado
+  guestContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, paddingBottom: 80 },
+  guestTitle: { fontSize: 24, fontWeight: 'bold', color: colors.textPrimary, marginTop: 16, marginBottom: 10 },
+  guestSubtitle: { fontSize: 15, color: colors.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
+  loginBtn: { width: '100%', backgroundColor: colors.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 },
+  loginBtnText: { color: colors.surface, fontSize: 16, fontWeight: 'bold' },
+  registerBtn: { width: '100%', borderWidth: 1.5, borderColor: colors.primary, borderRadius: 12, padding: 16, alignItems: 'center' },
+  registerBtnText: { color: colors.primary, fontSize: 16, fontWeight: '600' },
+
+  // Vista usuario logueado
   profileSection: { alignItems: 'center', paddingVertical: 30 },
   avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
   avatarText: { color: colors.surface, fontSize: 36, fontWeight: 'bold' },

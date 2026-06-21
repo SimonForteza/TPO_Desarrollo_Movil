@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { getSubastaDetalle, getCatalogoSubasta, unirseASubasta } from '../../api/subastas';
 import { getMediosPago, elegirMedioParaSubasta } from '../../api/mediosPago';
+import { requireLogin, getUserData } from '../../api/session';
 import { colors } from '../../theme/colors';
 
 function formatFecha(fecha) {
@@ -44,14 +45,16 @@ export default function DetalleSubasta({ route, navigation }) {
   useEffect(() => {
     const cargar = async () => {
       try {
-        const [detalle, items, medios] = await Promise.all([
+        const [detalle, items] = await Promise.all([
           getSubastaDetalle(id),
           getCatalogoSubasta(id),
-          getMediosPago().catch(() => []),
         ]);
         setSubasta(detalle);
         setCatalogo(items);
-        setMedio(elegirMedioParaSubasta(medios, detalle?.moneda));
+        if (getUserData()) {
+          const medios = await getMediosPago().catch(() => []);
+          setMedio(elegirMedioParaSubasta(medios, detalle?.moneda));
+        }
       } catch (error) {
         const msg = error.response?.data?.message || 'No se pudo cargar la subasta.';
         Alert.alert('Error', msg);
@@ -63,6 +66,7 @@ export default function DetalleSubasta({ route, navigation }) {
   }, [id]);
 
   const handleUnirse = async () => {
+    if (!requireLogin(navigation, 'Debés iniciar sesión para unirte a una subasta.')) return;
     if (!medio) {
       Alert.alert(
         'Medio de pago requerido',
