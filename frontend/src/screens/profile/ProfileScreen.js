@@ -105,6 +105,7 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Gestión de la Cuenta</Text>
           <MenuItem icon="card-outline" label="Medios de Pago" onPress={() => navigation.navigate('AddPaymentMethod')} />
+          <MenuItem icon="wallet-outline" label="Cuentas de Cobro" onPress={() => navigation.navigate('MisCuentasCobro')} />
           <MenuItem icon="time-outline" label="Historial de Participaciones" onPress={() => Alert.alert('Info', 'Próximamente')} />
           <MenuItem icon="settings-outline" label="Configuración" onPress={() => navigation.navigate('Configuracion')} />
           <MenuItem icon="log-out-outline" label="Cerrar Sesión" onPress={handleCerrarSesion} destructive />
