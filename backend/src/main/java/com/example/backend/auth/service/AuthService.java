@@ -128,6 +128,11 @@ public class AuthService {
         usuario.setPasswordHash(passwordEncoder.encode(req.password()));
         usuario.setEstadoKyc("activo");
         token.setUsado(true);
+
+        // Mark the associated client as admitted so they can see prices and bid
+        clienteRepository.findById(usuario.getClienteId()).ifPresent(cliente -> {
+            cliente.setAdmitido("si");
+        });
     }
 
     public LoginResponse login(LoginRequest req) {

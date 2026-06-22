@@ -21,6 +21,7 @@ import com.example.backend.shared.exception.ResourceNotFoundException;
 import com.example.backend.subastas.repository.AsistenteRepository;
 import com.example.backend.subastas.repository.ItemCatalogoRepository;
 import com.example.backend.subastas.repository.SubastaRepository;
+import com.example.backend.subastas.service.RemateService;
 import com.example.backend.subastas.util.Categoria;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +43,7 @@ public class PujaService {
     private final PujoRepository pujoRepository;
     private final MedioDePagoRepository medioDePagoRepository;
     private final MultaRepository multaRepository;
+    private final RemateService remateService;
 
     public PujaService(SubastaRepository subastaRepository,
                        ClienteRepository clienteRepository,
@@ -49,7 +51,8 @@ public class PujaService {
                        ItemCatalogoRepository itemCatalogoRepository,
                        PujoRepository pujoRepository,
                        MedioDePagoRepository medioDePagoRepository,
-                       MultaRepository multaRepository) {
+                       MultaRepository multaRepository,
+                       RemateService remateService) {
         this.subastaRepository = subastaRepository;
         this.clienteRepository = clienteRepository;
         this.asistenteRepository = asistenteRepository;
@@ -57,6 +60,7 @@ public class PujaService {
         this.pujoRepository = pujoRepository;
         this.medioDePagoRepository = medioDePagoRepository;
         this.multaRepository = multaRepository;
+        this.remateService = remateService;
     }
 
     public PujaResponse pujar(Usuario usuario, Integer subastaId, PujaRequest req) {
@@ -90,6 +94,12 @@ public class PujaService {
             throw new BusinessRuleException("This item has already been sold");
         }
 
+        // Subasta secuencial: solo se puede pujar el lote que está actualmente en remate y
+        // mientras no se haya agotado su tiempo.
+        if (!remateService.loteVigente(subastaId, req.itemId())) {
+            throw new BusinessRuleException("This lote is not currently on the block");
+        }
+
         MedioDePago medio = medioDePagoRepository.findByIdAndUsuarioId(req.medioPagoId(), usuario.getId())
                 .orElseThrow(() -> new ForbiddenException("Payment method not found or not owned"));
 
@@ -102,7 +112,10 @@ public class PujaService {
         }
 
         BigDecimal mejorOferta = pujoRepository.findMaxImporteByItem(req.itemId());
-        if (mejorOferta == null) mejorOferta = BigDecimal.ZERO;
+        if (mejorOferta == null) {
+            // No bids yet — base price is the starting offer
+            mejorOferta = item.getPrecioBase() != null ? item.getPrecioBase() : BigDecimal.ZERO;
+        }
 
         Categoria subastaCat = Categoria.from(subasta.getCategoria());
         boolean unlimited = subastaCat == Categoria.ORO || subastaCat == Categoria.PLATINO;
@@ -112,12 +125,18 @@ public class PujaService {
                 throw new BusinessRuleException("Bid must be higher than the current best offer");
             }
         } else {
-            BigDecimal precioBase = item.getPrecioBase();
-            BigDecimal min = mejorOferta.add(precioBase.multiply(new BigDecimal("0.01")));
-            BigDecimal max = mejorOferta.add(precioBase.multiply(new BigDecimal("0.20")));
-            if (req.importe().compareTo(min) < 0 || req.importe().compareTo(max) > 0) {
-                throw new BusinessRuleException(
-                        "Bid must be between " + min.toPlainString() + " and " + max.toPlainString());
+            BigDecimal precioBase = item.getPrecioBase() != null ? item.getPrecioBase() : BigDecimal.ZERO;
+            if (precioBase.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal min = mejorOferta.add(precioBase.multiply(new BigDecimal("0.01")));
+                BigDecimal max = mejorOferta.add(precioBase.multiply(new BigDecimal("0.20")));
+                if (req.importe().compareTo(min) < 0 || req.importe().compareTo(max) > 0) {
+                    throw new BusinessRuleException(
+                            "Bid must be between " + min.toPlainString() + " and " + max.toPlainString());
+                }
+            } else {
+                if (req.importe().compareTo(mejorOferta) <= 0) {
+                    throw new BusinessRuleException("Bid must be higher than the current best offer");
+                }
             }
         }
 
@@ -127,6 +146,9 @@ public class PujaService {
         pujo.setImporte(req.importe());
         pujo.setGanador("no");
         pujoRepository.save(pujo);
+
+        // Reinicia la cuenta regresiva del lote ("a la una... a las dos...").
+        remateService.reiniciarReloj(subastaId, req.itemId());
 
         return new PujaResponse(
                 pujo.getIdentificador(),

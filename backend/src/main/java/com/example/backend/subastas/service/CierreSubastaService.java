@@ -17,6 +17,7 @@ import com.example.backend.legacy.repository.RegistroDeSubastaRepository;
 import com.example.backend.pujas.repository.PujoRepository;
 import com.example.backend.shared.exception.BusinessRuleException;
 import com.example.backend.shared.exception.ResourceNotFoundException;
+import com.example.backend.subastas.dto.CierreLoteResultado;
 import com.example.backend.subastas.dto.CierreSubastaResponse;
 import com.example.backend.subastas.repository.ItemCatalogoRepository;
 import com.example.backend.subastas.repository.SubastaRepository;
@@ -55,6 +56,10 @@ public class CierreSubastaService {
         this.registroDeSubastaRepository = registroDeSubastaRepository;
     }
 
+    /**
+     * Cierre administrativo de toda la subasta de una sola vez (Swagger/Postman). Recorre
+     * todos los lotes pendientes y los martilla. Equivale a dejar correr el remate hasta el final.
+     */
     public CierreSubastaResponse cerrar(Integer subastaId) {
         Subasta subasta = subastaRepository.findById(subastaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found: " + subastaId));
@@ -68,64 +73,118 @@ public class CierreSubastaService {
         int itemsCompradosPorEmpresa = 0;
 
         for (ItemCatalogo item : items) {
-            if ("si".equals(item.getSubastado())) {
-                continue;
-            }
-
-            Producto producto = item.getProducto();
-            Duenio duenio = producto != null ? producto.getDuenio() : null;
-            List<Pujo> pujos = pujoRepository.findByItemIdentificador(item.getIdentificador());
-
-            if (pujos.isEmpty()) {
-                // Nadie pujó: la empresa compra al precio base. Solo se registra la venta (sin Compra de usuario).
-                registroDeSubastaRepository.save(
-                        buildRegistro(subasta, duenio, producto, null, item.getPrecioBase(), item.getComision()));
-                itemsCompradosPorEmpresa++;
-            } else {
-                Pujo ganadora = pujos.stream()
-                        .max(Comparator.comparing(Pujo::getImporte))
-                        .orElseThrow();
-                ganadora.setGanador("si");
-                pujoRepository.save(ganadora);
-
-                Cliente clienteGanador = ganadora.getAsistente().getCliente();
-                registroDeSubastaRepository.save(
-                        buildRegistro(subasta, duenio, producto, clienteGanador,
-                                ganadora.getImporte(), item.getComision()));
-
-                // Mapea el cliente legacy ganador a su Usuario para crear la Compra.
-                Usuario usuarioGanador = usuarioRepository
-                        .findByClienteId(clienteGanador.getIdentificador())
-                        .orElse(null);
-                if (usuarioGanador != null) {
-                    Compra compra = new Compra();
-                    compra.setUsuarioId(usuarioGanador.getId());
-                    compra.setItemId(item.getIdentificador());
-                    compra.setMontoFinal(ganadora.getImporte());
-                    compra.setComision(item.getComision());
-                    compra.setCostoEnvio(BigDecimal.ZERO);
-                    compra.setEstado("pendiente");
-                    compraRepository.save(compra);
-                    comprasGeneradas++;
-                }
-            }
-
-            item.setSubastado("si");
-            itemCatalogoRepository.save(item);
-
-            if (producto != null) {
-                bienRepository.findByProductoId(producto.getIdentificador()).ifPresent(bien -> {
-                    bien.setEstado(EstadoBien.VENDIDO);
-                    bienRepository.save(bien);
-                });
-            }
+            CierreLoteResultado res = cerrarItem(subasta, item);
+            if (res.compraGenerada()) comprasGeneradas++;
+            if (res.sinOfertas()) itemsCompradosPorEmpresa++;
         }
 
-        subasta.setEstado("cerrada");
-        subastaRepository.save(subasta);
+        marcarCerradaSiCorresponde(subasta);
 
         return new CierreSubastaResponse(subastaId, subasta.getEstado(),
                 items.size(), comprasGeneradas, itemsCompradosPorEmpresa);
+    }
+
+    /**
+     * Martilla un único lote: elige el mejor postor (o lo adjudica a la casa si nadie pujó),
+     * lo marca como subastado, registra la venta y genera la Compra del ganador.
+     *
+     * Idempotente: si el lote ya está cerrado ({@code subastado = 'si'}), reconstruye y
+     * devuelve el resultado existente sin efectos secundarios. Esto permite que varios
+     * clientes que llegan al deadline a la vez obtengan el mismo "Vendido a $X".
+     */
+    public CierreLoteResultado cerrarItem(Subasta subasta, ItemCatalogo item) {
+        List<Pujo> pujos = pujoRepository.findByItemIdentificador(item.getIdentificador());
+
+        // Ya cerrado en este mismo flujo (en memoria) → idempotente.
+        if ("si".equals(item.getSubastado())) {
+            return reconstruirResultado(item, pujos);
+        }
+
+        // Claim atómico del cierre: solo UNA transacción gana (afecta 1 fila). Si otro cliente
+        // martilló el mismo lote a la vez, acá obtenemos 0 y salimos sin duplicar Compra/registro.
+        int claimed = itemCatalogoRepository.marcarSubastado(item.getIdentificador());
+        item.setSubastado("si"); // refleja el cierre en memoria para que el remate avance al siguiente lote
+        if (claimed == 0) {
+            // Perdimos la carrera; la transacción ganadora ya commiteó: releemos para reconstruir.
+            return reconstruirResultado(item, pujoRepository.findByItemIdentificador(item.getIdentificador()));
+        }
+
+        Producto producto = item.getProducto();
+        Duenio duenio = producto != null ? producto.getDuenio() : null;
+        CierreLoteResultado resultado;
+
+        if (pujos.isEmpty()) {
+            // Nadie pujó: la empresa compra al precio base. Solo se registra la venta (sin Compra de usuario).
+            registroDeSubastaRepository.save(
+                    buildRegistro(subasta, duenio, producto, null, item.getPrecioBase(), item.getComision()));
+            resultado = new CierreLoteResultado(item.getIdentificador(), false, true,
+                    item.getPrecioBase(), null, false);
+        } else {
+            Pujo ganadora = pujos.stream()
+                    .max(Comparator.comparing(Pujo::getImporte))
+                    .orElseThrow();
+            ganadora.setGanador("si");
+            pujoRepository.save(ganadora);
+
+            Cliente clienteGanador = ganadora.getAsistente().getCliente();
+            registroDeSubastaRepository.save(
+                    buildRegistro(subasta, duenio, producto, clienteGanador,
+                            ganadora.getImporte(), item.getComision()));
+
+            // Mapea el cliente legacy ganador a su Usuario para crear la Compra.
+            Usuario usuarioGanador = usuarioRepository
+                    .findByClienteId(clienteGanador.getIdentificador())
+                    .orElse(null);
+            boolean compraGenerada = false;
+            if (usuarioGanador != null) {
+                Compra compra = new Compra();
+                compra.setUsuarioId(usuarioGanador.getId());
+                compra.setItemId(item.getIdentificador());
+                compra.setMontoFinal(ganadora.getImporte());
+                compra.setComision(item.getComision());
+                compra.setCostoEnvio(BigDecimal.ZERO);
+                compra.setEstado("pendiente");
+                compraRepository.save(compra);
+                compraGenerada = true;
+            }
+            resultado = new CierreLoteResultado(item.getIdentificador(), true, false,
+                    ganadora.getImporte(), ganadora.getAsistente().getNumeroPostor(), compraGenerada);
+        }
+
+        if (producto != null) {
+            bienRepository.findByProductoId(producto.getIdentificador()).ifPresent(bien -> {
+                bien.setEstado(EstadoBien.VENDIDO);
+                bienRepository.save(bien);
+            });
+        }
+
+        return resultado;
+    }
+
+    /** Reconstruye el resultado de un lote ya cerrado a partir de la puja ganadora persistida. */
+    private CierreLoteResultado reconstruirResultado(ItemCatalogo item, List<Pujo> pujos) {
+        Pujo ganadora = pujos.stream()
+                .filter(p -> "si".equals(p.getGanador()))
+                .findFirst()
+                .orElse(null);
+        if (ganadora != null) {
+            return new CierreLoteResultado(item.getIdentificador(), true, false,
+                    ganadora.getImporte(), ganadora.getAsistente().getNumeroPostor(), false);
+        }
+        return new CierreLoteResultado(item.getIdentificador(), false, true,
+                item.getPrecioBase(), null, false);
+    }
+
+    /** Si todos los lotes ya están subastados, marca la subasta como cerrada. */
+    public void marcarCerradaSiCorresponde(Subasta subasta) {
+        if (!"abierta".equals(subasta.getEstado())) return;
+        boolean quedanPendientes = itemCatalogoRepository
+                .findByCatalogoSubastaIdentificador(subasta.getIdentificador()).stream()
+                .anyMatch(i -> !"si".equals(i.getSubastado()));
+        if (!quedanPendientes) {
+            subasta.setEstado("cerrada");
+            subastaRepository.save(subasta);
+        }
     }
 
     private RegistroDeSubasta buildRegistro(Subasta subasta, Duenio duenio, Producto producto,

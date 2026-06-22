@@ -45,7 +45,7 @@ public class MedioDePagoService {
         medio.setUsuarioId(usuario.getId());
         medio.setTipo(req.tipo());
         medio.setMoneda(req.moneda());
-        medio.setEstado("pendiente");
+        medio.setEstado("verificado");
         medio.setDatosEnmascarados(mask(req.numero()));
         medioDePagoRepository.save(medio);
         return toResponse(medio);

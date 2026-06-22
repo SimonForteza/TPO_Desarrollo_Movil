@@ -44,6 +44,16 @@ public class InscripcionService {
         this.multaRepository = multaRepository;
     }
 
+    @Transactional(readOnly = true)
+    public boolean isInscripto(Usuario usuario, Integer subastaId) {
+        if (usuario == null) return false;
+        Cliente cliente = clienteRepository.findById(usuario.getClienteId()).orElse(null);
+        if (cliente == null) return false;
+        return asistenteRepository
+                .findByClienteIdentificadorAndSubastaIdentificador(cliente.getIdentificador(), subastaId)
+                .isPresent();
+    }
+
     public InscripcionResponse inscribir(Usuario usuario, Integer subastaId, InscripcionRequest req) {
         Subasta subasta = subastaRepository.findById(subastaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Auction not found: " + subastaId));
