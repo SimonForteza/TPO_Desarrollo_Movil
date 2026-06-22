@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { crearBien } from '../../api/bienes';
+import { listarCuentas } from '../../api/cuentasCobro';
 import BottomNavBar from '../../components/BottomNavBar';
 import { colors } from '../../theme/colors';
 
@@ -82,6 +83,18 @@ export default function SolicitarSubastaForm({ navigation }) {
 
     setEnviando(true);
     try {
+      const cuentas = await listarCuentas();
+      if (cuentas.length === 0) {
+        return Alert.alert(
+          'Falta una cuenta de cobro',
+          'Necesitás declarar al menos una cuenta de cobro antes de consignar un bien.',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Crear cuenta', onPress: () => navigation.navigate('MisCuentasCobro') },
+          ]
+        );
+      }
+
       await crearBien(payload);
       Alert.alert('Solicitud enviada', 'Tu producto quedó pendiente de revisión.');
       navigation.navigate('MisProductos');

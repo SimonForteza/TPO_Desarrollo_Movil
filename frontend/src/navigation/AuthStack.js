@@ -19,6 +19,8 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import FormCuentaBancaria from '../screens/payments/FormCuentaBancaria';
 import FormTarjetaCredito from '../screens/payments/FormTarjetaCredito';
 import FormCheque from '../screens/payments/FormCheque';
+import MisCuentasCobro from '../screens/payments/MisCuentasCobro';
+import FormCuentaCobro from '../screens/payments/FormCuentaCobro';
 import Configuracion from '../screens/settings/Configuracion';
 import CuentaSeguridad from '../screens/settings/CuentaSeguridad';
 import EditarPerfil from '../screens/settings/EditarPerfil';
@@ -71,6 +73,8 @@ export default function AuthStack() {
       <Stack.Screen name="FormCuentaBancaria" component={FormCuentaBancaria} options={{ title: 'Agregar cuenta bancaria' }} />
       <Stack.Screen name="FormTarjetaCredito" component={FormTarjetaCredito} options={{ title: 'Agregar tarjeta' }} />
       <Stack.Screen name="FormCheque" component={FormCheque} options={{ title: 'Agregar cheque' }} />
+      <Stack.Screen name="MisCuentasCobro" component={MisCuentasCobro} options={{ title: 'Mis cuentas de cobro' }} />
+      <Stack.Screen name="FormCuentaCobro" component={FormCuentaCobro} options={{ title: 'Agregar cuenta de cobro' }} />
 
       {/* --- FLUJO DE CONFIGURACIÓN --- */}
       <Stack.Screen name="Configuracion" component={Configuracion} options={{ title: 'Configuración' }} />

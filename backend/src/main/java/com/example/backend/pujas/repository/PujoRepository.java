@@ -8,8 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public interface PujoRepository extends JpaRepository<Pujo, Integer> {
+
+    List<Pujo> findByItemIdentificador(Integer itemId);
 
     @Query("""
         SELECT p FROM Pujo p
