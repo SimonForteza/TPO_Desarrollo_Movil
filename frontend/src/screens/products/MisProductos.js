@@ -75,14 +75,23 @@ export default function MisProductos({ navigation }) {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Productos</Text>
-          <TouchableOpacity
-            style={styles.solicitarBtn}
-            onPress={() => navigation.navigate('SolicitarSubastaInfo')}
-          >
-            <Ionicons name="add-circle-outline" size={18} color={colors.surface} />
-            <Text style={styles.solicitarBtnText}>Solicitar Subasta</Text>
-          </TouchableOpacity>
+          <Text style={styles.title}>Mis Productos</Text>
+          <View style={styles.headerBtns}>
+            <TouchableOpacity
+              style={[styles.headerBtn, styles.headerBtnOutline]}
+              onPress={() => navigation.navigate('SolicitarSubastaInfo')}
+            >
+              <Ionicons name="calendar-outline" size={15} color={colors.primary} />
+              <Text style={styles.headerBtnOutlineText}>Solicitar Subasta</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.headerBtn, styles.headerBtnPrimary]}
+              onPress={() => navigation.navigate('SolicitarSubastaInfo')}
+            >
+              <Ionicons name="add" size={16} color={colors.surface} />
+              <Text style={styles.headerBtnPrimaryText}>Agregar Producto</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.chipsRow}>
@@ -108,12 +117,7 @@ export default function MisProductos({ navigation }) {
           <View style={styles.emptyState}>
             <Ionicons name="cube-outline" size={56} color={colors.textSecondary} />
             <Text style={styles.emptyTitle}>Todavía no cargaste productos.</Text>
-            <TouchableOpacity
-              style={styles.emptyCta}
-              onPress={() => navigation.navigate('SolicitarSubastaInfo')}
-            >
-              <Text style={styles.emptyCtaText}>Solicitar Subasta</Text>
-            </TouchableOpacity>
+            <Text style={styles.emptySubtitle}>Usá el botón "Agregar Producto" para consignar un bien.</Text>
           </View>
         ) : (
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -221,18 +225,12 @@ const styles = StyleSheet.create({
 
   header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 12 },
   title: { fontSize: 26, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 12 },
-  solicitarBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    backgroundColor: colors.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 24,
-    gap: 8,
-  },
-  solicitarBtnText: { color: colors.surface, fontWeight: 'bold', fontSize: 14 },
+  headerBtns: { flexDirection: 'row', gap: 8 },
+  headerBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20 },
+  headerBtnPrimary: { backgroundColor: colors.primary },
+  headerBtnPrimaryText: { color: colors.surface, fontWeight: 'bold', fontSize: 13 },
+  headerBtnOutline: { borderWidth: 1, borderColor: colors.primary },
+  headerBtnOutlineText: { color: colors.primary, fontWeight: 'bold', fontSize: 13 },
 
   chipsRow: {
     flexDirection: 'row',
@@ -303,7 +301,6 @@ const styles = StyleSheet.create({
   actionBtnSecondaryText: { color: colors.primary, fontWeight: 'bold', fontSize: 13 },
 
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, paddingBottom: 80 },
-  emptyTitle: { fontSize: 16, color: colors.textSecondary, textAlign: 'center', marginTop: 16, marginBottom: 20 },
-  emptyCta: { backgroundColor: colors.primary, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 24 },
-  emptyCtaText: { color: colors.surface, fontWeight: 'bold' },
+  emptyTitle: { fontSize: 16, color: colors.textSecondary, textAlign: 'center', marginTop: 16, marginBottom: 8 },
+  emptySubtitle: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', lineHeight: 20 },
 });

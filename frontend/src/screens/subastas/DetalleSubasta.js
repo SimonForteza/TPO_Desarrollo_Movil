@@ -65,6 +65,15 @@ export default function DetalleSubasta({ route, navigation }) {
     cargar();
   }, [id]);
 
+  const irASalaDePujas = () => {
+    if (!requireLogin(navigation, 'Debés iniciar sesión para acceder a la sala de pujas.')) return;
+    navigation.navigate('PujasEnVivo', {
+      subastaId: id,
+      medioPagoId: medio?.id,
+      moneda: subasta?.moneda,
+    });
+  };
+
   const handleUnirse = async () => {
     if (!requireLogin(navigation, 'Debés iniciar sesión para unirte a una subasta.')) return;
     if (!medio) {
@@ -77,7 +86,14 @@ export default function DetalleSubasta({ route, navigation }) {
     setUniendo(true);
     try {
       await unirseASubasta(id, medio.id);
-      Alert.alert('Te uniste a la subasta', 'Ya podés seguir esta subasta desde la app.');
+      Alert.alert(
+        'Te uniste a la subasta',
+        '¿Querés ir a la sala de pujas ahora?',
+        [
+          { text: 'Ahora no', style: 'cancel' },
+          { text: 'Ir a sala de pujas', onPress: irASalaDePujas },
+        ]
+      );
     } catch (error) {
       const msg = error.response?.data?.message || 'No se pudo unir a la subasta.';
       Alert.alert('No se pudo unir', msg);
@@ -206,6 +222,10 @@ export default function DetalleSubasta({ route, navigation }) {
             <Text style={styles.unirseBtnText}>Unirse a la subasta</Text>
           )}
         </TouchableOpacity>
+        <TouchableOpacity style={styles.salaBtn} onPress={irASalaDePujas}>
+          <Ionicons name="hammer-outline" size={16} color={colors.primary} />
+          <Text style={styles.salaBtnText}>Sala de Pujas</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -292,8 +312,10 @@ const styles = StyleSheet.create({
   pagoLabel: { fontSize: 12, color: colors.textSecondary },
   pagoValue: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
 
-  footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#EEE', backgroundColor: colors.surface },
+  footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#EEE', backgroundColor: colors.surface, gap: 10 },
   unirseBtn: { backgroundColor: colors.primary, borderRadius: 10, padding: 16, alignItems: 'center' },
   unirseBtnDisabled: { opacity: 0.6 },
   unirseBtnText: { color: colors.surface, fontSize: 16, fontWeight: 'bold' },
+  salaBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.primary },
+  salaBtnText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
 });

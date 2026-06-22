@@ -104,8 +104,8 @@ public class PujaService {
         BigDecimal mejorOferta = pujoRepository.findMaxImporteByItem(req.itemId());
         if (mejorOferta == null) mejorOferta = BigDecimal.ZERO;
 
-        Categoria userCat = Categoria.from(cliente.getCategoria());
-        boolean unlimited = userCat == Categoria.ORO || userCat == Categoria.PLATINO;
+        Categoria subastaCat = Categoria.from(subasta.getCategoria());
+        boolean unlimited = subastaCat == Categoria.ORO || subastaCat == Categoria.PLATINO;
 
         if (unlimited) {
             if (req.importe().compareTo(mejorOferta) <= 0) {

@@ -30,6 +30,7 @@ import DetalleProducto from '../screens/products/DetalleProducto';
 import SolicitarSubastaInfo from '../screens/products/SolicitarSubastaInfo';
 import SolicitarSubastaForm from '../screens/products/SolicitarSubastaForm';
 import DetalleSubasta from '../screens/subastas/DetalleSubasta';
+import PujasEnVivo from '../screens/subastas/PujasEnVivo';
 
 const Stack = createNativeStackNavigator();
 
@@ -81,7 +82,7 @@ export default function AuthStack() {
 
       {/* --- FLUJO DE PRODUCTOS / BIENES --- */}
       <Stack.Screen name="MisProductos" component={MisProductos} options={{ headerShown: false }} />
-      <Stack.Screen name="DetalleProducto" component={DetalleProducto} options={{ title: 'Detalle del producto' }} />
+      <Stack.Screen name="DetalleProducto" component={DetalleProducto} options={{ headerShown: false }} />
       <Stack.Screen name="SolicitarSubastaInfo" component={SolicitarSubastaInfo} options={{ headerShown: false }} />
       <Stack.Screen
         name="SolicitarSubastaForm"
@@ -95,6 +96,7 @@ export default function AuthStack() {
 
       {/* --- DETALLE DE SUBASTA --- */}
       <Stack.Screen name="DetalleSubasta" component={DetalleSubasta} options={{ headerShown: false }} />
+      <Stack.Screen name="PujasEnVivo" component={PujasEnVivo} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
