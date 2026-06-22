@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class BienService {
 
     private static final Set<String> ESTADOS_CON_UBICACION =
-            Set.of("en_inspeccion", "aceptado", EstadoBien.APROBADO, EstadoBien.ASIGNADO, EstadoBien.VENDIDO);
+            Set.of(EstadoBien.APROBADO, EstadoBien.ASIGNADO, EstadoBien.VENDIDO);
 
     private final BienRepository bienRepository;
     private final ClienteRepository clienteRepository;
@@ -84,6 +84,10 @@ public class BienService {
         producto.setSeguro(null);
         productoRepository.saveAndFlush(producto);
 
+        if (req.fotos() == null || req.fotos().size() < 6) {
+            throw new BusinessRuleException("Se requieren exactamente 6 fotos del bien");
+        }
+
         Base64.Decoder decoder = Base64.getDecoder();
         for (String b64 : req.fotos()) {
             Foto foto = new Foto();
@@ -114,14 +118,14 @@ public class BienService {
         BienEnConsignacion bien = bienRepository.findByIdAndUsuarioId(id, usuario.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Consignment not found: " + id));
 
-        if (!"en_inspeccion".equals(bien.getEstado())
+        if (!EstadoBien.APROBADO.equals(bien.getEstado())
                 || bien.getPrecioBasePropuesto() == null
                 || bien.getComisionPropuesta() == null) {
             throw new BusinessRuleException(
-                    "Consignment must be in 'en_inspeccion' state with proposed values set");
+                    "Consignment must be in 'aprobado' state with proposed price and commission set");
         }
 
-        bien.setEstado(Boolean.TRUE.equals(req.acepta()) ? "aceptado" : "rechazado");
+        bien.setEstado(Boolean.TRUE.equals(req.acepta()) ? EstadoBien.ASIGNADO : EstadoBien.RECHAZADO);
         bienRepository.save(bien);
 
         return bienMapper.toDetail(bien);

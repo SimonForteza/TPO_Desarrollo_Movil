@@ -10,6 +10,10 @@ import java.time.LocalTime;
 
 @Entity
 @Table(name = "subastas")
+@SecondaryTable(
+    name = "subastas_config",
+    pkJoinColumns = @PrimaryKeyJoinColumn(name = "subasta_id")
+)
 @Getter @Setter @NoArgsConstructor
 public class Subasta {
 
@@ -46,6 +50,6 @@ public class Subasta {
     @Column(name = "categoria")
     private String categoria;
 
-    @Column(name = "moneda")
+    @Column(name = "moneda", table = "subastas_config")
     private String moneda;
 }

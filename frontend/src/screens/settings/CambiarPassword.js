@@ -39,7 +39,7 @@ export default function CambiarPassword({ navigation }) {
         Alert.alert('Error', 'La contraseña actual es incorrecta.');
       } else if (status === 401) {
         Alert.alert('Sesión expirada', 'Por favor, volvé a iniciar sesión.');
-        navigation.replace('Welcome');
+        navigation.replace('Home');
       } else {
         Alert.alert('Error', 'No se pudo cambiar la contraseña.');
       }

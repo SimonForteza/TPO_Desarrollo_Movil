@@ -44,3 +44,20 @@ let _userData = null;
 export function setUserData(data) { _userData = data; }
 export function getUserData() { return _userData; }
 export function clearUserData() { _userData = null; }
+
+// --- Guard de autenticación ---
+// Muestra alerta si el usuario no está logueado y opcionalmente navega al Login.
+// Retorna true si está logueado, false si no.
+export function requireLogin(navigation, mensaje = 'Debés iniciar sesión para realizar esta acción.') {
+  if (_userData) return true;
+  const { Alert } = require('react-native');
+  Alert.alert(
+    'Iniciá sesión',
+    mensaje,
+    [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Iniciar sesión', onPress: () => navigation.navigate('Login') },
+    ]
+  );
+  return false;
+}

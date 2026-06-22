@@ -30,7 +30,4 @@ public class Pujo {
 
     @Column(name = "ganador")
     private String ganador;
-
-    @Column(name = "orden")
-    private Integer orden;
 }

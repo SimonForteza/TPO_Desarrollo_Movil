@@ -104,8 +104,8 @@ public class PujaService {
         BigDecimal mejorOferta = pujoRepository.findMaxImporteByItem(req.itemId());
         if (mejorOferta == null) mejorOferta = BigDecimal.ZERO;
 
-        Categoria userCat = Categoria.from(cliente.getCategoria());
-        boolean unlimited = userCat == Categoria.ORO || userCat == Categoria.PLATINO;
+        Categoria subastaCat = Categoria.from(subasta.getCategoria());
+        boolean unlimited = subastaCat == Categoria.ORO || subastaCat == Categoria.PLATINO;
 
         if (unlimited) {
             if (req.importe().compareTo(mejorOferta) <= 0) {
@@ -121,19 +121,16 @@ public class PujaService {
             }
         }
 
-        int nextOrden = pujoRepository.findMaxOrdenBySubasta(subastaId) + 1;
-
         Pujo pujo = new Pujo();
         pujo.setAsistente(asistente);
         pujo.setItem(item);
         pujo.setImporte(req.importe());
-        pujo.setOrden(nextOrden);
         pujo.setGanador("no");
         pujoRepository.save(pujo);
 
         return new PujaResponse(
                 pujo.getIdentificador(),
-                nextOrden,
+                pujo.getIdentificador(),
                 req.importe(),
                 req.itemId(),
                 asistente.getIdentificador(),
@@ -156,7 +153,7 @@ public class PujaService {
         List<PujaHistoryItem> content = page.getContent().stream()
                 .map(p -> new PujaHistoryItem(
                         p.getIdentificador(),
-                        p.getOrden(),
+                        p.getIdentificador(),
                         p.getImporte(),
                         p.getItem().getIdentificador(),
                         p.getItem().getProducto().getDescripcionCatalogo(),

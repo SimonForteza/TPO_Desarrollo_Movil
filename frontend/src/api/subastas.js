@@ -28,3 +28,16 @@ export async function unirseASubasta(id, medioPagoId) {
   const res = await api.post(`/subastas/${id}/inscribirse`, { medioPagoId });
   return res.data?.data ?? res.data;
 }
+
+// GET /subastas/{id}/pujas -> ApiResponse<PagedResponse<PujaHistoryItem>>
+export async function getPujas(subastaId, params = {}) {
+  const res = await api.get(`/subastas/${subastaId}/pujas`, { params });
+  const data = res.data?.data ?? res.data;
+  return Array.isArray(data) ? data : (data?.content ?? []);
+}
+
+// POST /subastas/{id}/pujar -> ApiResponse<PujaResponse>
+export async function realizarPuja(subastaId, { itemId, importe, medioPagoId }) {
+  const res = await api.post(`/subastas/${subastaId}/pujar`, { itemId, importe, medioPagoId });
+  return res.data?.data ?? res.data;
+}

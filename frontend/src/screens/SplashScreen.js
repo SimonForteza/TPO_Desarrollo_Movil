@@ -2,44 +2,55 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import axios from 'axios';
 import { API_URL } from '../api/config';
-import { getPendingRegistration, clearPendingRegistration } from '../api/session';
+import {
+  getAccessToken, getRefreshToken, setTokens, clearTokens,
+  setUserData,
+} from '../api/session';
 import { colors } from '../theme/colors';
 
 export default function SplashScreen({ navigation }) {
   useEffect(() => {
-    const resolveNavigation = async () => {
-      const usuarioId = await getPendingRegistration();
-
-      if (!usuarioId) return () => navigation.replace('Welcome');
-
-      try {
-        const res = await axios.get(`${API_URL}/auth/kyc-estado/${usuarioId}`);
-        const data = res.data.data;
-
-        if (data?.aprobado === true) {
-          return () => navigation.replace('CompleteRegistration', { tokenActivacion: data.tokenActivacion });
+    const resolveSession = async () => {
+      const accessToken = await getAccessToken();
+      if (accessToken) {
+        try {
+          const meRes = await axios.get(`${API_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          setUserData(meRes.data.data);
+        } catch (error) {
+          if (error.response?.status === 401) {
+            const refreshToken = await getRefreshToken();
+            if (refreshToken) {
+              try {
+                const refreshRes = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
+                const { accessToken: newAccess, refreshToken: newRefresh } = refreshRes.data.data;
+                await setTokens(newAccess, newRefresh);
+                const meRes2 = await axios.get(`${API_URL}/auth/me`, {
+                  headers: { Authorization: `Bearer ${newAccess}` },
+                });
+                setUserData(meRes2.data.data);
+              } catch (_) {
+                await clearTokens();
+              }
+            } else {
+              await clearTokens();
+            }
+          }
         }
-        return () => navigation.replace('VerificationPending', { usuarioId: Number(usuarioId) });
-      } catch (error) {
-        if (error.response?.status === 404) {
-          // El backend se reinició (H2 in-memory): el usuario ya no existe, limpiar estado
-          await clearPendingRegistration();
-        }
-        // Error de red transitorio: ir a Welcome sin borrar la clave
-        return () => navigation.replace('Welcome');
       }
+      // Siempre va al Home — con o sin sesión (efecto vidriera)
     };
 
-    // Ambas deben completarse antes de navegar: la red Y el mínimo de branding
-    const minDelay = new Promise(resolve => setTimeout(resolve, 2500));
-    Promise.all([resolveNavigation(), minDelay]).then(([navigate]) => navigate());
+    const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+    Promise.all([resolveSession(), minDelay]).then(() => navigation.replace('Home'));
   }, [navigation]);
 
   return (
     <View style={styles.container}>
       <View style={styles.centerContent}>
-        <Image 
-          source={require('../../assets/images/logo.png')} 
+        <Image
+          source={require('../../assets/images/logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -55,5 +66,5 @@ const styles = StyleSheet.create({
   centerContent: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   logo: { width: 180, height: 180, marginBottom: 10 },
   title: { fontSize: 28, fontWeight: 'bold', color: colors.secondary },
-  version: { fontSize: 14, color: colors.textSecondary }
+  version: { fontSize: 14, color: colors.textSecondary },
 });

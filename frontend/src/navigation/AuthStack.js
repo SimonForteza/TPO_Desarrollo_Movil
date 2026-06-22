@@ -30,179 +30,73 @@ import DetalleProducto from '../screens/products/DetalleProducto';
 import SolicitarSubastaInfo from '../screens/products/SolicitarSubastaInfo';
 import SolicitarSubastaForm from '../screens/products/SolicitarSubastaForm';
 import DetalleSubasta from '../screens/subastas/DetalleSubasta';
+import PujasEnVivo from '../screens/subastas/PujasEnVivo';
 
 const Stack = createNativeStackNavigator();
 
 export default function AuthStack() {
   return (
-    <Stack.Navigator 
+    <Stack.Navigator
       initialRouteName="Splash"
       screenOptions={{
-        headerStyle: { backgroundColor: colors.primary }, // Barra azul
-        headerTintColor: colors.surface,                  // Texto blanco
+        headerStyle: { backgroundColor: colors.primary },
+        headerTintColor: colors.surface,
         headerTitleStyle: { fontWeight: 'bold' },
         contentStyle: { backgroundColor: colors.background }
       }}
     >
-      <Stack.Screen 
-        name="Splash" 
-        component={SplashScreen} 
-        options={{ headerShown: false }} 
-      />
-      <Stack.Screen 
-        name="Welcome" 
-        component={WelcomeScreen} 
-        options={{ headerShown: false }} 
-      />
-      <Stack.Screen 
-        name="Login" 
-        component={LoginScreen} 
-        options={{ title: 'Iniciar Sesión' }} 
-      />
-      
+      <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Iniciar Sesión' }} />
+
       {/* --- FLUJO DE REGISTRO --- */}
-      <Stack.Screen 
-        name="RegisterStep1" 
-        component={RegisterStep1} 
-        options={{ title: 'Datos Personales' }} 
-      />
-      <Stack.Screen 
-        name="DniFront" 
-        component={DniFront} 
-        options={{ title: 'DNI Frente' }} 
-      />
-      <Stack.Screen 
-        name="DniBack" 
-        component={DniBack} 
-        options={{ title: 'DNI Dorso' }} 
-      />
-      <Stack.Screen 
-        name="VerificationPending" 
-        component={VerificationPending} 
-        options={{ headerShown: false }} // Acá ocultamos la barra porque es una pantalla final
-      />
-      <Stack.Screen 
-        name="Home" 
-        component={HomeScreen} 
-        options={{ headerShown: false }} 
-      />
-      <Stack.Screen
-        name="CompleteRegistration"
-        component={CompleteRegistration}
-        options={{ title: 'Crear Contraseña', headerBackVisible: false }}
-      />
-      <Stack.Screen
-        name="RegistroCompleto"
-        component={RegistroCompleto}
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="RegisterStep1" component={RegisterStep1} options={{ title: 'Datos Personales' }} />
+      <Stack.Screen name="DniFront" component={DniFront} options={{ title: 'DNI Frente' }} />
+      <Stack.Screen name="DniBack" component={DniBack} options={{ title: 'DNI Dorso' }} />
+      <Stack.Screen name="VerificationPending" component={VerificationPending} options={{ headerShown: false }} />
+      <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="CompleteRegistration" component={CompleteRegistration} options={{ title: 'Crear Contraseña', headerBackVisible: false }} />
+      <Stack.Screen name="RegistroCompleto" component={RegistroCompleto} options={{ headerShown: false }} />
 
       {/* --- FLUJO DE RECUPERACIÓN DE CONTRASEÑA --- */}
-      <Stack.Screen
-        name="RecuperarPassword"
-        component={RecuperarPassword}
-        options={{ title: 'Recuperar Contraseña' }}
-      />
-      <Stack.Screen
-        name="LinkEnviado"
-        component={LinkEnviado}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="ResetPassword"
-        component={ResetPassword}
-        options={{ title: 'Nueva Contraseña', headerBackVisible: false }}
-      />
-      <Stack.Screen
-        name="Perfil"
-        component={ProfileScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="AddPaymentMethod"
-        component={AddPaymentMethod}
-        options={{ title: 'Medios de pago' }}
-      />
-      <Stack.Screen 
-        name="FormCuentaBancaria" 
-        component={FormCuentaBancaria} 
-        options={{ title: 'Agregar cuenta bancaria' }} 
-      />
-      <Stack.Screen 
-        name="FormTarjetaCredito" 
-        component={FormTarjetaCredito} 
-        options={{ title: 'Agregar tarjeta' }} 
-      />
-      <Stack.Screen
-        name="FormCheque"
-        component={FormCheque}
-        options={{ title: 'Agregar cheque' }}
-      />
+      <Stack.Screen name="RecuperarPassword" component={RecuperarPassword} options={{ title: 'Recuperar Contraseña' }} />
+      <Stack.Screen name="LinkEnviado" component={LinkEnviado} options={{ headerShown: false }} />
+      <Stack.Screen name="ResetPassword" component={ResetPassword} options={{ title: 'Nueva Contraseña', headerBackVisible: false }} />
+
+      {/* --- PERFIL --- */}
+      <Stack.Screen name="Perfil" component={ProfileScreen} options={{ headerShown: false }} />
+
+      {/* --- MEDIOS DE PAGO --- */}
+      <Stack.Screen name="AddPaymentMethod" component={AddPaymentMethod} options={{ title: 'Medios de pago' }} />
+      <Stack.Screen name="FormCuentaBancaria" component={FormCuentaBancaria} options={{ title: 'Agregar cuenta bancaria' }} />
+      <Stack.Screen name="FormTarjetaCredito" component={FormTarjetaCredito} options={{ title: 'Agregar tarjeta' }} />
+      <Stack.Screen name="FormCheque" component={FormCheque} options={{ title: 'Agregar cheque' }} />
 
       {/* --- FLUJO DE CONFIGURACIÓN --- */}
-      <Stack.Screen
-        name="Configuracion"
-        component={Configuracion}
-        options={{ title: 'Configuración' }}
-      />
-      <Stack.Screen
-        name="CuentaSeguridad"
-        component={CuentaSeguridad}
-        options={{ title: 'Cuenta y Seguridad' }}
-      />
-      <Stack.Screen
-        name="EditarPerfil"
-        component={EditarPerfil}
-        options={{ title: 'Editar Perfil' }}
-      />
-      <Stack.Screen
-        name="CambiarPassword"
-        component={CambiarPassword}
-        options={{ title: 'Cambiar Contraseña' }}
-      />
-      <Stack.Screen
-        name="Notificaciones"
-        component={Notificaciones}
-        options={{ title: 'Notificaciones' }}
-      />
-      <Stack.Screen
-        name="Preferencias"
-        component={Preferencias}
-        options={{ title: 'Preferencias' }}
-      />
+      <Stack.Screen name="Configuracion" component={Configuracion} options={{ title: 'Configuración' }} />
+      <Stack.Screen name="CuentaSeguridad" component={CuentaSeguridad} options={{ title: 'Cuenta y Seguridad' }} />
+      <Stack.Screen name="EditarPerfil" component={EditarPerfil} options={{ title: 'Editar Perfil' }} />
+      <Stack.Screen name="CambiarPassword" component={CambiarPassword} options={{ title: 'Cambiar Contraseña' }} />
+      <Stack.Screen name="Notificaciones" component={Notificaciones} options={{ title: 'Notificaciones' }} />
+      <Stack.Screen name="Preferencias" component={Preferencias} options={{ title: 'Preferencias' }} />
 
       {/* --- FLUJO DE PRODUCTOS / BIENES --- */}
-      <Stack.Screen
-        name="MisProductos"
-        component={MisProductos}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="DetalleProducto"
-        component={DetalleProducto}
-        options={{ title: 'Detalle del producto' }}
-      />
-      <Stack.Screen
-        name="SolicitarSubastaInfo"
-        component={SolicitarSubastaInfo}
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="MisProductos" component={MisProductos} options={{ headerShown: false }} />
+      <Stack.Screen name="DetalleProducto" component={DetalleProducto} options={{ headerShown: false }} />
+      <Stack.Screen name="SolicitarSubastaInfo" component={SolicitarSubastaInfo} options={{ headerShown: false }} />
       <Stack.Screen
         name="SolicitarSubastaForm"
         component={SolicitarSubastaForm}
         options={{
           title: 'Solicitar Subasta',
-          headerTintColor: colors.secondary,        // flecha naranja (Figma)
-          headerTitleStyle: { fontWeight: 'bold', color: colors.surface }, // título blanco
+          headerTintColor: colors.secondary,
+          headerTitleStyle: { fontWeight: 'bold', color: colors.surface },
         }}
       />
 
       {/* --- DETALLE DE SUBASTA --- */}
-      <Stack.Screen
-        name="DetalleSubasta"
-        component={DetalleSubasta}
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="DetalleSubasta" component={DetalleSubasta} options={{ headerShown: false }} />
+      <Stack.Screen name="PujasEnVivo" component={PujasEnVivo} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

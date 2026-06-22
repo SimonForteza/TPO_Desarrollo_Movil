@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { requireLogin } from '../api/session';
 import { colors } from '../theme/colors';
 
 // active: 'subastas' | 'productos' | 'perfil'
@@ -15,7 +16,7 @@ export default function BottomNavBar({ navigation, active }) {
       key: 'productos',
       label: 'Mis Productos',
       icon: 'cube-outline',
-      onPress: () => navigation.navigate('MisProductos'),
+      onPress: () => requireLogin(navigation, 'Iniciá sesión para ver tus productos.') && navigation.navigate('MisProductos'),
     },
     {
       key: 'perfil',

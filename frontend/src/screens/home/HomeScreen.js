@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import api from '../../api/axiosConfig';
 import { getSubastas } from '../../api/subastas';
-import { clearPendingRegistration, getPendingRegistration, getUserData } from '../../api/session';
+import { clearPendingRegistration, getPendingRegistration, getUserData, setUserData } from '../../api/session';
 import BottomNavBar from '../../components/BottomNavBar';
 import { colors } from '../../theme/colors';
 
@@ -23,20 +23,27 @@ function formatearFecha(fechaOriginal) {
 }
 
 export default function HomeScreen({ navigation, route }) {
-  const usuarioSesion = getUserData();
-  const usuario = route.params?.user || usuarioSesion;
-  const nombreUsuario = usuario?.nombre || 'Invitado';
-  const categoriaUsuario = usuario?.categoria;
-
+  const [usuario, setUsuario] = useState(route.params?.user || getUserData());
   const [kycAprobado, setKycAprobado] = useState(false);
   const [tokenActivacion, setTokenActivacion] = useState(null);
   const [chipActivo, setChipActivo] = useState('Todas');
   const [busqueda, setBusqueda] = useState('');
-
   const [subastas, setSubastas] = useState([]);
   const [loadingSubastas, setLoadingSubastas] = useState(true);
 
   const intervalRef = useRef(null);
+
+  // Cargar datos del usuario si no están en memoria (ej: reinicio de la app)
+  useEffect(() => {
+    if (usuario) return;
+    api.get('/auth/me')
+      .then((res) => {
+        const data = res.data?.data ?? res.data;
+        setUserData(data);
+        setUsuario(data);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const fetchSubastas = async () => {
@@ -83,7 +90,6 @@ export default function HomeScreen({ navigation, route }) {
     navigation.navigate('CompleteRegistration', { tokenActivacion });
   };
 
-  // Filtrado por búsqueda + chip de moneda
   let base = subastas;
   if (busqueda.trim()) {
     const q = busqueda.trim().toLowerCase();
@@ -104,6 +110,9 @@ export default function HomeScreen({ navigation, route }) {
 
   const totalVisible =
     (mostrarEnVivo ? enVivo.length : 0) + (mostrarProximas ? proximas.length : 0);
+
+  const nombreUsuario = usuario?.nombre || 'Invitado';
+  const categoriaUsuario = usuario?.categoria;
 
   return (
     <SafeAreaView style={styles.safeArea}>
