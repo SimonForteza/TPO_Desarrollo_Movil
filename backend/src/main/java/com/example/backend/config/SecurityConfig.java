@@ -66,13 +66,13 @@ public class SecurityConfig {
                                 "/auth/recuperar-password",
                                 "/auth/resetear-password",
                                 "/auth/verificar-disponibilidad",
+                                "/auth/paises",
                                 "/subastas/**",
                                 "/ws/**",
                                 "/auth/refresh",
                                 "/dev/**",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/auth/resetear-password"
+                                "/v3/api-docs/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

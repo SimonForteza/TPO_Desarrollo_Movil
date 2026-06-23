@@ -5,6 +5,8 @@ import com.example.backend.auth.dto.*;
 import com.example.backend.auth.entity.Usuario;
 import com.example.backend.auth.kyc.KycSimulacionService;
 import com.example.backend.auth.service.AuthService;
+import com.example.backend.legacy.entity.Pais;
+import com.example.backend.legacy.repository.PaisRepository;
 import com.example.backend.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import com.example.backend.legacy.repository.PersonaRepository;
+import java.util.Comparator;
+import java.util.List;
 
 @RestController
 @RequestMapping("/auth")
@@ -21,12 +25,25 @@ public class AuthController {
     private final KycSimulacionService kycSimulacionService;
     private final UsuarioRepository usuarioRepository;
     private final PersonaRepository personaRepository;
+    private final PaisRepository paisRepository;
 
-    public AuthController(AuthService authService, KycSimulacionService kycSimulacionService, UsuarioRepository usuarioRepository, PersonaRepository personaRepository) {
+    public AuthController(AuthService authService, KycSimulacionService kycSimulacionService,
+                          UsuarioRepository usuarioRepository, PersonaRepository personaRepository,
+                          PaisRepository paisRepository) {
         this.authService = authService;
         this.kycSimulacionService = kycSimulacionService;
         this.usuarioRepository = usuarioRepository;
         this.personaRepository = personaRepository;
+        this.paisRepository = paisRepository;
+    }
+
+    @GetMapping("/paises")
+    public ResponseEntity<ApiResponse<List<PaisResponse>>> listarPaises() {
+        List<PaisResponse> paises = paisRepository.findAll().stream()
+                .sorted(Comparator.comparing(Pais::getNombre))
+                .map(p -> new PaisResponse(p.getNumero(), p.getNombre(), p.getNombreCorto()))
+                .toList();
+        return ResponseEntity.ok(ApiResponse.ok("Countries", paises));
     }
 
     @PostMapping("/registro")
