@@ -86,18 +86,11 @@ export default function MisProductos({ navigation }) {
           <Text style={styles.title}>Mis Productos</Text>
           <View style={styles.headerBtns}>
             <TouchableOpacity
-              style={[styles.headerBtn, styles.headerBtnOutline]}
-              onPress={() => navigation.navigate('SolicitarSubastaInfo')}
-            >
-              <Ionicons name="calendar-outline" size={15} color={colors.primary} />
-              <Text style={styles.headerBtnOutlineText}>Solicitar Subasta</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
               style={[styles.headerBtn, styles.headerBtnPrimary]}
               onPress={() => navigation.navigate('SolicitarSubastaInfo')}
             >
               <Ionicons name="add" size={16} color={colors.surface} />
-              <Text style={styles.headerBtnPrimaryText}>Agregar Producto</Text>
+              <Text style={styles.headerBtnPrimaryText}>Solicitar Subasta</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -241,8 +234,6 @@ const styles = StyleSheet.create({
   headerBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20 },
   headerBtnPrimary: { backgroundColor: colors.primary },
   headerBtnPrimaryText: { color: colors.surface, fontWeight: 'bold', fontSize: 13 },
-  headerBtnOutline: { borderWidth: 1, borderColor: colors.primary },
-  headerBtnOutlineText: { color: colors.primary, fontWeight: 'bold', fontSize: 13 },
 
   chipsRow: {
     flexDirection: 'row',
