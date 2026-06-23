@@ -15,6 +15,7 @@ public record BienDetail(
         String ubicacionDeposito,
         BigDecimal precioBasePropuesto,
         BigDecimal comisionPropuesta,
+        BigDecimal gastosDevolucion,
         SeguroSummary seguro,
         Integer subastaId,
         SubastaAsignadaResumen subastaAsignada,

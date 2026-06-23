@@ -44,6 +44,9 @@ public class BienEnConsignacion {
     @Column(name = "motivo_rechazo", length = 300)
     private String motivoRechazo;
 
+    @Column(name = "gastos_devolucion", precision = 15, scale = 2)
+    private BigDecimal gastosDevolucion;
+
     @Column(name = "subasta_id")
     private Integer subastaId;
 

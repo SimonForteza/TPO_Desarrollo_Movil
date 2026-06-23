@@ -21,3 +21,15 @@ export async function crearBien(payload) {
   const res = await api.post('/bienes', payload);
   return res.data?.data ?? res.data;
 }
+
+// PUT /bienes/{id}/aceptar-condiciones -> ApiResponse<BienDetail>
+export async function aceptarCondiciones(id) {
+  const res = await api.put(`/bienes/${id}/aceptar-condiciones`);
+  return res.data?.data ?? res.data;
+}
+
+// PUT /bienes/{id}/rechazar-condiciones -> ApiResponse<BienDetail>
+export async function rechazarCondiciones(id) {
+  const res = await api.put(`/bienes/${id}/rechazar-condiciones`);
+  return res.data?.data ?? res.data;
+}

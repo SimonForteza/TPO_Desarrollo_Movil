@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { getInscripcion, getPujas, getRemate, realizarPuja } from '../../api/subastas';
+import { subscribeRemate } from '../../api/remateSocket';
 import { colors } from '../../theme/colors';
 
 function formatMoneda(valor) {
@@ -44,6 +45,7 @@ export default function PujasEnVivo({ route, navigation }) {
   const [pujando, setPujando] = useState(false);
   const [seg, setSeg] = useState(0);
   const [isInscripto, setIsInscripto] = useState(null);
+  const [wsConnected, setWsConnected] = useState(false);
 
   const pollingRef = useRef(null);
   const tickRef = useRef(null);
@@ -90,6 +92,28 @@ export default function PujasEnVivo({ route, navigation }) {
     return () => {
       activo = false;
       clearInterval(pollingRef.current);
+    };
+  }, [subastaId]);
+
+  // Push en tiempo real vía WebSocket/STOMP. El estado pusheado trae la mejor oferta/líder y el
+  // reloj al instante; refrescamos el historial detallado con ese mismo evento (no por segundo).
+  // El anuncio "¡Martillo!" queda en el polling para evitar alertas duplicadas.
+  useEffect(() => {
+    let activo = true;
+    const unsubscribe = subscribeRemate(
+      subastaId,
+      (estado) => {
+        if (!activo) return;
+        // No tocar prevLoteIdRef: el anuncio "¡Martillo!" lo maneja el polling para no duplicar.
+        setRemate(estado);
+        setSeg(estado.segundosRestantes ?? 0);
+        getPujas(subastaId).then((pujas) => activo && setHistorial(pujas)).catch(() => {});
+      },
+      (connected) => activo && setWsConnected(connected)
+    );
+    return () => {
+      activo = false;
+      unsubscribe();
     };
   }, [subastaId]);
 
@@ -244,8 +268,10 @@ export default function PujasEnVivo({ route, navigation }) {
                   En remate · Lote {loteActual.numeroLote} de {lotes.length}
                 </Text>
                 <View style={styles.liveBadge}>
-                  <View style={styles.liveDot} />
-                  <Text style={styles.liveText}>EN VIVO</Text>
+                  <View style={[styles.liveDot, { backgroundColor: wsConnected ? colors.success : '#F59E0B' }]} />
+                  <Text style={[styles.liveText, { color: wsConnected ? colors.success : '#F59E0B' }]}>
+                    {wsConnected ? 'EN VIVO' : 'CONECTANDO'}
+                  </Text>
                 </View>
               </View>
               <Text style={styles.itemNombre} numberOfLines={2}>

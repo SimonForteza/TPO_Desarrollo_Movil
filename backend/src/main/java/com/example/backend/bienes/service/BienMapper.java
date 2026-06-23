@@ -54,6 +54,7 @@ public class BienMapper {
                 bien.getUbicacionDeposito(),
                 bien.getPrecioBasePropuesto(),
                 bien.getComisionPropuesta(),
+                bien.getGastosDevolucion(),
                 bien.getSubastaId(),
                 primeraFotoBase64(bien.getProductoId()),
                 bien.getCreadaEn());
@@ -77,6 +78,7 @@ public class BienMapper {
                 bien.getUbicacionDeposito(),
                 bien.getPrecioBasePropuesto(),
                 bien.getComisionPropuesta(),
+                bien.getGastosDevolucion(),
                 toSeguroSummary(producto.getSeguro()),
                 bien.getSubastaId(),
                 toSubastaResumen(bien.getSubastaId()),

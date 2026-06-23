@@ -24,12 +24,15 @@ import com.example.backend.shared.exception.ResourceNotFoundException;
 import com.example.backend.subastas.repository.AsistenteRepository;
 import com.example.backend.subastas.repository.ItemCatalogoRepository;
 import com.example.backend.subastas.repository.SubastaRepository;
+import com.example.backend.subastas.service.RemateBroadcaster;
 import com.example.backend.subastas.service.RemateService;
 import com.example.backend.subastas.util.Categoria;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -48,6 +51,7 @@ public class PujaService {
     private final MultaRepository multaRepository;
     private final MultaService multaService;
     private final RemateService remateService;
+    private final RemateBroadcaster remateBroadcaster;
     private final NotificacionService notificacionService;
     private final UsuarioRepository usuarioRepository;
 
@@ -60,6 +64,7 @@ public class PujaService {
                        MultaRepository multaRepository,
                        MultaService multaService,
                        RemateService remateService,
+                       RemateBroadcaster remateBroadcaster,
                        NotificacionService notificacionService,
                        UsuarioRepository usuarioRepository) {
         this.subastaRepository = subastaRepository;
@@ -71,6 +76,7 @@ public class PujaService {
         this.multaRepository = multaRepository;
         this.multaService = multaService;
         this.remateService = remateService;
+        this.remateBroadcaster = remateBroadcaster;
         this.notificacionService = notificacionService;
         this.usuarioRepository = usuarioRepository;
     }
@@ -180,6 +186,15 @@ public class PujaService {
 
         // Reinicia la cuenta regresiva del lote ("a la una... a las dos...").
         remateService.reiniciarReloj(subastaId, req.itemId());
+
+        // Push en tiempo real del estado actualizado a los suscriptos, una vez commiteada la puja.
+        final Integer sid = subastaId;
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                remateBroadcaster.broadcast(sid);
+            }
+        });
 
         return new PujaResponse(
                 pujo.getIdentificador(),

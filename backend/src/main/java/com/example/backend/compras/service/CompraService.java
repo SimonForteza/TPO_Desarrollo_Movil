@@ -138,6 +138,8 @@ public class CompraService {
                 compra.getMontoFinal(),
                 compra.getComision(),
                 compra.getCostoEnvio(),
+                compra.isConSeguroEnvio(),
+                compra.isRetiraPersonalmente(),
                 total(compra),
                 "https://cdn.subastas.com/facturas/" + compra.getId() + ".pdf");
     }

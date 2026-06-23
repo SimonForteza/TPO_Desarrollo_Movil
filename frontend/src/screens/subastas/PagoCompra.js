@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { getCompra, pagarCompra } from '../../api/compras';
 import { getMediosPago } from '../../api/mediosPago';
 import { colors } from '../../theme/colors';
@@ -19,6 +19,7 @@ export default function PagoCompra({ navigation, route }) {
   const [compra, setCompra] = useState(null);
   const [medios, setMedios] = useState([]);
   const [medioId, setMedioId] = useState(null);
+  const [conSeguro, setConSeguro] = useState(false);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
 
@@ -54,7 +55,7 @@ export default function PagoCompra({ navigation, route }) {
       await pagarCompra(compraId, {
         medioPagoId: medioId,
         retiraPersonalmente: !!retiraPersonalmente,
-        conSeguroEnvio: false,
+        conSeguroEnvio: !retiraPersonalmente && conSeguro,
       });
       navigation.replace('FacturaCompra', { compraId });
     } catch (err) {
@@ -113,6 +114,23 @@ export default function PagoCompra({ navigation, route }) {
         )}
       </View>
 
+      {!retiraPersonalmente && (
+        <View style={styles.card}>
+          <View style={styles.seguroRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>Seguro de envío</Text>
+              <Text style={styles.seguroSub}>Cobertura ante pérdida o daño durante el traslado.</Text>
+            </View>
+            <Switch
+              value={conSeguro}
+              onValueChange={setConSeguro}
+              trackColor={{ false: '#CCCCCC', true: colors.primary }}
+              thumbColor={colors.surface}
+            />
+          </View>
+        </View>
+      )}
+
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Desglose</Text>
         <Row label="Precio subasta" value={money(compra?.montoFinal)} />
@@ -121,6 +139,9 @@ export default function PagoCompra({ navigation, route }) {
           label="Envío"
           value={retiraPersonalmente ? 'Retiro en persona' : money(costoEnvio)}
         />
+        {!retiraPersonalmente && (
+          <Row label="Seguro" value={conSeguro ? 'Incluido' : 'Sin seguro'} />
+        )}
         <View style={styles.divider} />
         <Row label="Total" value={money(total)} bold />
       </View>
@@ -161,6 +182,8 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontSize: 15, fontWeight: '700', color: colors.textPrimary, marginBottom: 14 },
   emptyText: { fontSize: 14, color: colors.textSecondary, lineHeight: 22 },
+  seguroRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  seguroSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
 
   opcion: {
     flexDirection: 'row', alignItems: 'center', padding: 14,
