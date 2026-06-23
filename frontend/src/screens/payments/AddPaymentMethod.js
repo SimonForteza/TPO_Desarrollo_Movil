@@ -67,6 +67,11 @@ export default function AddPaymentMethod({ route, navigation }) {
         <View style={styles.textContainer}>
           <Text style={styles.cardTitle}>{item.tipo.toUpperCase()}</Text>
           <Text style={styles.cardSubtitle}>{item.datosEnmascarados}</Text>
+          {item.saldo != null && (
+            <Text style={styles.cardSaldo}>
+              Saldo: {item.moneda} {Number(item.saldo).toLocaleString('es-AR')}
+            </Text>
+          )}
         </View>
       </View>
       
@@ -146,6 +151,7 @@ const styles = StyleSheet.create({
   textContainer: { marginLeft: 12, flex: 1 },
   cardTitle: { fontWeight: 'bold', fontSize: 16, color: colors.textPrimary },
   cardSubtitle: { fontSize: 14, color: colors.textSecondary },
+  cardSaldo: { fontSize: 13, color: colors.success, fontWeight: '600', marginTop: 2 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   badge: { backgroundColor: '#EFF6FF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   badgeText: { fontSize: 12, color: colors.primary, fontWeight: 'bold' },

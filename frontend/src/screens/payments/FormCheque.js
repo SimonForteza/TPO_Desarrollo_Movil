@@ -7,6 +7,7 @@ import { colors } from '../../theme/colors';
 
 export default function FormCheque({ navigation }) {
   const [numeroCheque, setNumeroCheque] = useState('');
+  const [monto, setMonto] = useState('');
   const [moneda, setMoneda] = useState('ARS');
   const [frente, setFrente] = useState(null);
   const [dorso, setDorso] = useState(null);
@@ -41,6 +42,11 @@ export default function FormCheque({ navigation }) {
       Alert.alert('Atención', 'Tenés que ingresar el número del cheque.');
       return;
     }
+    const montoNum = parseFloat(monto);
+    if (!monto.trim() || isNaN(montoNum) || montoNum <= 0) {
+      Alert.alert('Atención', 'Ingresá el monto certificado del cheque (mayor a 0).');
+      return;
+    }
     if (!frente || !dorso) {
       Alert.alert('Atención', 'Necesitás subir ambas fotos del cheque.');
       return;
@@ -52,7 +58,8 @@ export default function FormCheque({ navigation }) {
         tipo: 'cheque', // Minúsculas para pasar el @Pattern
         moneda: moneda,
         numero: numeroCheque.trim(),
-        fotoChequeFrenteBase64: frente.base64, 
+        monto: montoNum,
+        fotoChequeFrenteBase64: frente.base64,
         fotoChequeDorsoBase64: dorso.base64
       };
 
@@ -99,13 +106,23 @@ export default function FormCheque({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          <TextInput 
-            style={styles.input} 
-            placeholder="Número de cheque" 
-            value={numeroCheque} 
-            onChangeText={setNumeroCheque} 
-            keyboardType="numeric" 
-            placeholderTextColor={colors.textSecondary} 
+          <TextInput
+            style={styles.input}
+            placeholder="Número de cheque"
+            value={numeroCheque}
+            onChangeText={setNumeroCheque}
+            keyboardType="numeric"
+            placeholderTextColor={colors.textSecondary}
+          />
+
+          <Text style={styles.label}>Monto certificado del cheque:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ej: 50000"
+            value={monto}
+            onChangeText={setMonto}
+            keyboardType="numeric"
+            placeholderTextColor={colors.textSecondary}
           />
 
           <View style={styles.row}>
