@@ -7,6 +7,7 @@ import com.example.backend.bienes.repository.BienRepository;
 import com.example.backend.bienes.util.EstadoBien;
 import com.example.backend.cuentascobro.repository.CuentaCobroRepository;
 import com.example.backend.legacy.entity.*;
+import com.example.backend.notificaciones.service.NotificacionService;
 import com.example.backend.legacy.repository.*;
 import com.example.backend.shared.dto.PagedResponse;
 import com.example.backend.shared.exception.BusinessRuleException;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
@@ -29,6 +31,8 @@ public class BienService {
     private static final Set<String> ESTADOS_CON_UBICACION =
             Set.of(EstadoBien.APROBADO, EstadoBien.ASIGNADO, EstadoBien.VENDIDO);
 
+    private static final BigDecimal GASTOS_DEVOLUCION_PCT = new BigDecimal("0.05");
+
     private final BienRepository bienRepository;
     private final ClienteRepository clienteRepository;
     private final DuenioRepository duenioRepository;
@@ -36,6 +40,8 @@ public class BienService {
     private final FotoRepository fotoRepository;
     private final CuentaCobroRepository cuentaCobroRepository;
     private final BienMapper bienMapper;
+    private final NotificacionService notificacionService;
+    private final RevisionSimulacionService revisionSimulacionService;
 
     public BienService(BienRepository bienRepository,
                        ClienteRepository clienteRepository,
@@ -43,7 +49,9 @@ public class BienService {
                        ProductoRepository productoRepository,
                        FotoRepository fotoRepository,
                        CuentaCobroRepository cuentaCobroRepository,
-                       BienMapper bienMapper) {
+                       BienMapper bienMapper,
+                       NotificacionService notificacionService,
+                       RevisionSimulacionService revisionSimulacionService) {
         this.bienRepository = bienRepository;
         this.clienteRepository = clienteRepository;
         this.duenioRepository = duenioRepository;
@@ -51,6 +59,8 @@ public class BienService {
         this.fotoRepository = fotoRepository;
         this.cuentaCobroRepository = cuentaCobroRepository;
         this.bienMapper = bienMapper;
+        this.notificacionService = notificacionService;
+        this.revisionSimulacionService = revisionSimulacionService;
     }
 
     @Transactional(readOnly = true)
@@ -112,6 +122,7 @@ public class BienService {
         bien.setDeclaracionPropiedad(true);
         bien.setOrigenLicitoAcreditado(true);
         bienRepository.save(bien);
+        revisionSimulacionService.simularRevision(bien.getId());
 
         return bienMapper.toDetail(bien);
     }
@@ -123,21 +134,54 @@ public class BienService {
         return bienMapper.toDetail(bien);
     }
 
-    public BienDetail aceptarCondiciones(Usuario usuario, Long id, AceptarCondicionesRequest req) {
-        BienEnConsignacion bien = bienRepository.findByIdAndUsuarioId(id, usuario.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Consignment not found: " + id));
+    public BienDetail aceptarCondiciones(Usuario usuario, Long id) {
+        BienEnConsignacion bien = findAprobadoConCondiciones(usuario.getId(), id);
+        bien.setEstado(EstadoBien.ASIGNADO);
+        bienRepository.save(bien);
 
+        String nombre = nombreProducto(bien.getProductoId());
+        notificacionService.crear(bien.getUsuarioId(), "BIEN_CONDICIONES_ACEPTADAS",
+                "Condiciones aceptadas",
+                String.format("Aceptaste las condiciones para \"%s\". Tu bien quedará asignado a una subasta.", nombre),
+                "BIEN", bien.getId());
+
+        return bienMapper.toDetail(bien);
+    }
+
+    public BienDetail rechazarCondiciones(Usuario usuario, Long id) {
+        BienEnConsignacion bien = findAprobadoConCondiciones(usuario.getId(), id);
+
+        BigDecimal gastos = bien.getPrecioBasePropuesto().multiply(GASTOS_DEVOLUCION_PCT);
+        bien.setEstado(EstadoBien.DEVUELTO);
+        bien.setGastosDevolucion(gastos);
+        bienRepository.save(bien);
+
+        String nombre = nombreProducto(bien.getProductoId());
+        notificacionService.crear(bien.getUsuarioId(), "BIEN_DEVUELTO",
+                "Bien devuelto con gastos",
+                String.format("Rechazaste las condiciones para \"%s\". Se procederá a la devolución con gastos a tu cargo por $%s.",
+                        nombre, gastos.toPlainString()),
+                "BIEN", bien.getId());
+
+        return bienMapper.toDetail(bien);
+    }
+
+    private BienEnConsignacion findAprobadoConCondiciones(Long usuarioId, Long id) {
+        BienEnConsignacion bien = bienRepository.findByIdAndUsuarioId(id, usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Consignment not found: " + id));
         if (!EstadoBien.APROBADO.equals(bien.getEstado())
                 || bien.getPrecioBasePropuesto() == null
                 || bien.getComisionPropuesta() == null) {
             throw new BusinessRuleException(
                     "Consignment must be in 'aprobado' state with proposed price and commission set");
         }
+        return bien;
+    }
 
-        bien.setEstado(Boolean.TRUE.equals(req.acepta()) ? EstadoBien.ASIGNADO : EstadoBien.RECHAZADO);
-        bienRepository.save(bien);
-
-        return bienMapper.toDetail(bien);
+    private String nombreProducto(Integer productoId) {
+        return productoRepository.findById(productoId)
+                .map(Producto::getDescripcionCatalogo)
+                .orElse("bien");
     }
 
     @Transactional(readOnly = true)

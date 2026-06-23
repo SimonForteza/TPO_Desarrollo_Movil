@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Image,
   Platform,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -47,6 +48,7 @@ function formatMoneda(valor) {
 export default function MisProductos({ navigation }) {
   const [bienes, setBienes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filtro, setFiltro] = useState('todas');
 
   const cargar = useCallback(async () => {
@@ -57,8 +59,14 @@ export default function MisProductos({ navigation }) {
       console.error('Error al cargar bienes:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    cargar();
+  }, [cargar]);
 
   // Refresca al entrar/volver a la pantalla (ej. tras crear o tras aprobación admin)
   useFocusEffect(
@@ -120,7 +128,11 @@ export default function MisProductos({ navigation }) {
             <Text style={styles.emptySubtitle}>Usá el botón "Agregar Producto" para consignar un bien.</Text>
           </View>
         ) : (
-          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          >
             {bienesFiltrados.map((bien) => (
               <ProductoCard key={bien.id} bien={bien} navigation={navigation} />
             ))}

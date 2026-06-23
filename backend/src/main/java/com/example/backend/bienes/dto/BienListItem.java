@@ -12,6 +12,7 @@ public record BienListItem(
         String ubicacionDeposito,
         BigDecimal precioBasePropuesto,
         BigDecimal comisionPropuesta,
+        BigDecimal gastosDevolucion,
         Integer subastaId,
         String primeraFotoBase64,
         LocalDateTime creadaEn

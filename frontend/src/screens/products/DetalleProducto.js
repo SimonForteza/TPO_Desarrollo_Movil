@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   ActivityIndicator,
   Alert,
@@ -13,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { getBienDetalle } from '../../api/bienes';
+import { aceptarCondiciones, getBienDetalle, rechazarCondiciones } from '../../api/bienes';
 import { colors } from '../../theme/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -41,15 +42,60 @@ export default function DetalleProducto({ route, navigation }) {
   const { id } = route.params || {};
   const [bien, setBien] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const [fotoActual, setFotoActual] = useState(0);
   const scrollRef = useRef(null);
 
-  useEffect(() => {
+  const cargarDetalle = useCallback(() => {
+    setLoading(true);
     getBienDetalle(id)
       .then(setBien)
       .catch(() => Alert.alert('Error', 'No se pudo cargar el detalle del producto.'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useFocusEffect(cargarDetalle);
+
+  const handleAceptar = async () => {
+    setActionLoading(true);
+    try {
+      await aceptarCondiciones(id);
+      Alert.alert('Condiciones aceptadas', 'Tu bien quedará asignado a una subasta.');
+      cargarDetalle();
+    } catch (err) {
+      const msg = err?.response?.data?.message ?? 'No se pudieron aceptar las condiciones.';
+      Alert.alert('Error', msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRechazar = () => {
+    Alert.alert(
+      'Rechazar condiciones',
+      'Al rechazar, se procederá a la devolución del bien con gastos a tu cargo (5% del precio base).',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Rechazar',
+          style: 'destructive',
+          onPress: async () => {
+            setActionLoading(true);
+            try {
+              await rechazarCondiciones(id);
+              Alert.alert('Condiciones rechazadas', 'Se iniciará la devolución con los gastos informados.');
+              cargarDetalle();
+            } catch (err) {
+              const msg = err?.response?.data?.message ?? 'No se pudieron rechazar las condiciones.';
+              Alert.alert('Error', msg);
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   if (loading) {
     return (
@@ -158,6 +204,46 @@ export default function DetalleProducto({ route, navigation }) {
             </Section>
           ) : null}
 
+          {/* Aceptar / rechazar condiciones (solo cuando está aprobado con precio y comisión) */}
+          {bien.estado === 'aprobado' && bien.precioBasePropuesto && bien.comisionPropuesta ? (
+            <View style={styles.condicionesBox}>
+              <Text style={styles.condicionesTitle}>¿Aceptás las condiciones propuestas?</Text>
+              <View style={styles.condicionesRow}>
+                <TouchableOpacity
+                  style={[styles.btnAceptar, actionLoading && styles.btnDisabled]}
+                  onPress={handleAceptar}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? (
+                    <ActivityIndicator color={colors.surface} size="small" />
+                  ) : (
+                    <Text style={styles.btnAceptarText}>Aceptar</Text>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.btnRechazar, actionLoading && styles.btnDisabled]}
+                  onPress={handleRechazar}
+                  disabled={actionLoading}
+                >
+                  <Text style={styles.btnRechazarText}>Rechazar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : null}
+
+          {/* Aviso de gastos de devolución (cuando fue devuelto por rechazo del usuario) */}
+          {bien.estado === 'devuelto' && bien.gastosDevolucion ? (
+            <View style={[styles.alertBox, styles.alertBoxWarning]}>
+              <Ionicons name="warning-outline" size={18} color={colors.warning} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.alertTitle, { color: colors.warning }]}>Gastos de devolución</Text>
+                <Text style={styles.alertText}>
+                  Se cobrarán gastos a tu cargo por {formatMoneda(bien.gastosDevolucion)}.
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           {/* Depósito */}
           {bien.ubicacionDeposito ? (
             <Section title="Depósito">
@@ -245,8 +331,18 @@ const styles = StyleSheet.create({
 
   alertBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderWidth: 1, borderColor: colors.danger, borderRadius: 10, padding: 14, marginBottom: 16, backgroundColor: '#FFF5F5' },
   alertBoxInfo: { borderColor: colors.info, backgroundColor: '#F0F6FF' },
+  alertBoxWarning: { borderColor: colors.warning, backgroundColor: '#FFFBEA' },
   alertTitle: { fontSize: 13, fontWeight: 'bold', color: colors.danger, marginBottom: 4 },
   alertText: { fontSize: 13, color: colors.textPrimary, lineHeight: 19 },
+
+  condicionesBox: { borderWidth: 1, borderColor: colors.primary, borderRadius: 12, padding: 16, marginBottom: 16, backgroundColor: '#F0F6FF' },
+  condicionesTitle: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, marginBottom: 12 },
+  condicionesRow: { flexDirection: 'row', gap: 10 },
+  btnAceptar: { flex: 1, backgroundColor: colors.primary, borderRadius: 8, padding: 12, alignItems: 'center' },
+  btnAceptarText: { color: colors.surface, fontWeight: 'bold', fontSize: 14 },
+  btnRechazar: { flex: 1, borderWidth: 1.5, borderColor: colors.danger, borderRadius: 8, padding: 12, alignItems: 'center', backgroundColor: colors.surface },
+  btnRechazarText: { color: colors.danger, fontWeight: 'bold', fontSize: 14 },
+  btnDisabled: { opacity: 0.5 },
 
   section: { marginTop: 8, marginBottom: 8, borderTopWidth: 1, borderTopColor: '#F0F0F0', paddingTop: 14 },
   sectionTitle: { fontSize: 13, fontWeight: '700', color: colors.primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },

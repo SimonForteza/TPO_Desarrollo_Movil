@@ -11,6 +11,8 @@ public record FacturaResponse(
         BigDecimal montoFinal,
         BigDecimal comision,
         BigDecimal costoEnvio,
+        boolean conSeguroEnvio,
+        boolean retiraPersonalmente,
         BigDecimal total,
         String pdfUrl
 ) {}

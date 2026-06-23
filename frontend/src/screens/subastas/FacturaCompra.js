@@ -87,8 +87,14 @@ export default function FacturaCompra({ navigation, route }) {
         <Row label="Comisión (10%)" value={money(factura.comision)} />
         <Row
           label="Envío"
-          value={Number(factura.costoEnvio ?? 0) === 0 ? 'Retiro en persona' : money(factura.costoEnvio)}
+          value={factura.retiraPersonalmente ? 'Retiro en persona' : money(factura.costoEnvio)}
         />
+        {!factura.retiraPersonalmente && (
+          <Row
+            label="Seguro de envío"
+            value={factura.conSeguroEnvio ? 'Incluido' : 'Sin seguro'}
+          />
+        )}
         <View style={styles.divider} />
         <Row label="Total pagado" value={money(factura.total)} bold />
       </View>
