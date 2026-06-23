@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "medios_de_pago")
 @Getter
@@ -30,4 +32,9 @@ public class MedioDePago {
 
     @Column(name = "datos_enmascarados")
     private String datosEnmascarados;
+
+    // Fondos asociados al medio (cuenta reservada / límite de tarjeta / monto del cheque).
+    // Se descuenta al concretar una compra. El TP no integra pasarelas reales.
+    @Column(precision = 15, scale = 2)
+    private BigDecimal saldo;
 }

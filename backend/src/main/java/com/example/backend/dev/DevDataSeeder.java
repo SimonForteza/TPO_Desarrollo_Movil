@@ -169,6 +169,7 @@ public class DevDataSeeder implements CommandLineRunner {
         medioTest.setMoneda("ARS");
         medioTest.setEstado("verificado");
         medioTest.setDatosEnmascarados("**** **** **** 4242");
+        medioTest.setSaldo(new BigDecimal("1000000.00"));
         em.persist(medioTest);
 
         MedioDePago medioPendiente = new MedioDePago();
@@ -177,6 +178,7 @@ public class DevDataSeeder implements CommandLineRunner {
         medioPendiente.setMoneda("USD");
         medioPendiente.setEstado("pendiente");
         medioPendiente.setDatosEnmascarados("****1111");
+        medioPendiente.setSaldo(new BigDecimal("1000.00"));
         em.persist(medioPendiente);
 
         Asistente asistenteTest = new Asistente();

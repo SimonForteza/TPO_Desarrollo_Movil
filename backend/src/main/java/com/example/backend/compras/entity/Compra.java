@@ -24,6 +24,10 @@ public class Compra {
     @Column(name = "item_id", nullable = false)
     private Integer itemId;
 
+    // Medio de pago usado al cerrar la subasta (para trazabilidad y la multa de impago).
+    @Column(name = "medio_pago_id")
+    private Long medioPagoId;
+
     @Column(name = "monto_final", nullable = false, precision = 15, scale = 2)
     private BigDecimal montoFinal;
 

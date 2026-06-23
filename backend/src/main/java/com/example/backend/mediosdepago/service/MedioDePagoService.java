@@ -6,6 +6,7 @@ import com.example.backend.mediosdepago.dto.MedioDePagoResponse;
 import com.example.backend.mediosdepago.entity.MedioDePago;
 import com.example.backend.mediosdepago.repository.MedioDePagoRepository;
 import com.example.backend.shared.dto.PagedResponse;
+import com.example.backend.shared.exception.BusinessRuleException;
 import com.example.backend.shared.exception.ConflictException;
 import com.example.backend.shared.exception.ResourceNotFoundException;
 import com.example.backend.subastas.repository.AsistenteRepository;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,8 +49,20 @@ public class MedioDePagoService {
         medio.setMoneda(req.moneda());
         medio.setEstado("pendiente");
         medio.setDatosEnmascarados(mask(req.numero()));
+        medio.setSaldo(resolveSaldo(req));
         medioDePagoRepository.save(medio);
         return toResponse(medio);
+    }
+
+    // Cheque: el usuario declara el monto certificado. Cuenta y tarjeta: saldo por defecto según moneda.
+    private BigDecimal resolveSaldo(MedioDePagoRequest req) {
+        if ("cheque".equals(req.tipo())) {
+            if (req.monto() == null || req.monto().signum() <= 0) {
+                throw new BusinessRuleException("Cheque amount is required and must be positive");
+            }
+            return req.monto();
+        }
+        return "USD".equals(req.moneda()) ? new BigDecimal("1000") : new BigDecimal("1000000");
     }
 
     public void delete(Usuario usuario, Long id) {
@@ -64,7 +78,7 @@ public class MedioDePagoService {
 
     private MedioDePagoResponse toResponse(MedioDePago m) {
         return new MedioDePagoResponse(m.getId(), m.getTipo(), m.getMoneda(),
-                m.getEstado(), m.getDatosEnmascarados());
+                m.getEstado(), m.getDatosEnmascarados(), m.getSaldo());
     }
 
     private String mask(String numero) {

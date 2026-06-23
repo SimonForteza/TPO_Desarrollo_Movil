@@ -14,6 +14,8 @@ import com.example.backend.legacy.entity.Pujo;
 import com.example.backend.legacy.entity.RegistroDeSubasta;
 import com.example.backend.legacy.entity.Subasta;
 import com.example.backend.legacy.repository.RegistroDeSubastaRepository;
+import com.example.backend.mediosdepago.entity.MedioDePago;
+import com.example.backend.mediosdepago.repository.MedioDePagoRepository;
 import com.example.backend.pujas.repository.PujoRepository;
 import com.example.backend.shared.exception.BusinessRuleException;
 import com.example.backend.shared.exception.ResourceNotFoundException;
@@ -38,6 +40,7 @@ public class CierreSubastaService {
     private final UsuarioRepository usuarioRepository;
     private final BienRepository bienRepository;
     private final RegistroDeSubastaRepository registroDeSubastaRepository;
+    private final MedioDePagoRepository medioDePagoRepository;
 
     public CierreSubastaService(SubastaRepository subastaRepository,
                                 ItemCatalogoRepository itemCatalogoRepository,
@@ -45,7 +48,8 @@ public class CierreSubastaService {
                                 CompraRepository compraRepository,
                                 UsuarioRepository usuarioRepository,
                                 BienRepository bienRepository,
-                                RegistroDeSubastaRepository registroDeSubastaRepository) {
+                                RegistroDeSubastaRepository registroDeSubastaRepository,
+                                MedioDePagoRepository medioDePagoRepository) {
         this.subastaRepository = subastaRepository;
         this.itemCatalogoRepository = itemCatalogoRepository;
         this.pujoRepository = pujoRepository;
@@ -53,6 +57,7 @@ public class CierreSubastaService {
         this.usuarioRepository = usuarioRepository;
         this.bienRepository = bienRepository;
         this.registroDeSubastaRepository = registroDeSubastaRepository;
+        this.medioDePagoRepository = medioDePagoRepository;
     }
 
     public CierreSubastaResponse cerrar(Integer subastaId) {
@@ -66,6 +71,7 @@ public class CierreSubastaService {
         List<ItemCatalogo> items = itemCatalogoRepository.findByCatalogoSubastaIdentificador(subastaId);
         int comprasGeneradas = 0;
         int itemsCompradosPorEmpresa = 0;
+        int itemsSinFondos = 0;
 
         for (ItemCatalogo item : items) {
             if ("si".equals(item.getSubastado())) {
@@ -81,51 +87,75 @@ public class CierreSubastaService {
                 registroDeSubastaRepository.save(
                         buildRegistro(subasta, duenio, producto, null, item.getPrecioBase(), item.getComision()));
                 itemsCompradosPorEmpresa++;
-            } else {
-                Pujo ganadora = pujos.stream()
-                        .max(Comparator.comparing(Pujo::getImporte))
-                        .orElseThrow();
-                ganadora.setGanador("si");
-                pujoRepository.save(ganadora);
-
-                Cliente clienteGanador = ganadora.getAsistente().getCliente();
-                registroDeSubastaRepository.save(
-                        buildRegistro(subasta, duenio, producto, clienteGanador,
-                                ganadora.getImporte(), item.getComision()));
-
-                // Mapea el cliente legacy ganador a su Usuario para crear la Compra.
-                Usuario usuarioGanador = usuarioRepository
-                        .findByClienteId(clienteGanador.getIdentificador())
-                        .orElse(null);
-                if (usuarioGanador != null) {
-                    Compra compra = new Compra();
-                    compra.setUsuarioId(usuarioGanador.getId());
-                    compra.setItemId(item.getIdentificador());
-                    compra.setMontoFinal(ganadora.getImporte());
-                    compra.setComision(item.getComision());
-                    compra.setCostoEnvio(BigDecimal.ZERO);
-                    compra.setEstado("pendiente");
-                    compraRepository.save(compra);
-                    comprasGeneradas++;
-                }
+                finalizarVenta(item, producto);
+                continue;
             }
 
-            item.setSubastado("si");
-            itemCatalogoRepository.save(item);
+            Pujo ganadora = pujos.stream()
+                    .max(Comparator.comparing(Pujo::getImporte))
+                    .orElseThrow();
 
-            if (producto != null) {
-                bienRepository.findByProductoId(producto.getIdentificador()).ifPresent(bien -> {
-                    bien.setEstado(EstadoBien.VENDIDO);
-                    bienRepository.save(bien);
-                });
+            // El comprador paga monto final + comisión. Se verifica contra el medio usado al inscribirse.
+            BigDecimal total = ganadora.getImporte().add(item.getComision());
+            Long medioId = ganadora.getAsistente().getMedioPagoId();
+            MedioDePago medio = medioId == null ? null
+                    : medioDePagoRepository.findById(medioId).orElse(null);
+
+            if (medio == null || medio.getSaldo() == null || medio.getSaldo().compareTo(total) < 0) {
+                // Fondos insuficientes: no se concreta la compra ni la venta.
+                // (Chunk C: acá se generará la Multa del 10% y se resolverá el ítem.)
+                itemsSinFondos++;
+                continue;
             }
+
+            ganadora.setGanador("si");
+            pujoRepository.save(ganadora);
+
+            Cliente clienteGanador = ganadora.getAsistente().getCliente();
+            registroDeSubastaRepository.save(
+                    buildRegistro(subasta, duenio, producto, clienteGanador,
+                            ganadora.getImporte(), item.getComision()));
+
+            // Mapea el cliente legacy ganador a su Usuario para crear la Compra y descontar los fondos.
+            Usuario usuarioGanador = usuarioRepository
+                    .findByClienteId(clienteGanador.getIdentificador())
+                    .orElse(null);
+            if (usuarioGanador != null) {
+                Compra compra = new Compra();
+                compra.setUsuarioId(usuarioGanador.getId());
+                compra.setItemId(item.getIdentificador());
+                compra.setMedioPagoId(medio.getId());
+                compra.setMontoFinal(ganadora.getImporte());
+                compra.setComision(item.getComision());
+                compra.setCostoEnvio(BigDecimal.ZERO);
+                compra.setEstado("pendiente");
+                compraRepository.save(compra);
+                comprasGeneradas++;
+
+                medio.setSaldo(medio.getSaldo().subtract(total));
+                medioDePagoRepository.save(medio);
+            }
+
+            finalizarVenta(item, producto);
         }
 
         subasta.setEstado("cerrada");
         subastaRepository.save(subasta);
 
         return new CierreSubastaResponse(subastaId, subasta.getEstado(),
-                items.size(), comprasGeneradas, itemsCompradosPorEmpresa);
+                items.size(), comprasGeneradas, itemsCompradosPorEmpresa, itemsSinFondos);
+    }
+
+    private void finalizarVenta(ItemCatalogo item, Producto producto) {
+        item.setSubastado("si");
+        itemCatalogoRepository.save(item);
+
+        if (producto != null) {
+            bienRepository.findByProductoId(producto.getIdentificador()).ifPresent(bien -> {
+                bien.setEstado(EstadoBien.VENDIDO);
+                bienRepository.save(bien);
+            });
+        }
     }
 
     private RegistroDeSubasta buildRegistro(Subasta subasta, Duenio duenio, Producto producto,
