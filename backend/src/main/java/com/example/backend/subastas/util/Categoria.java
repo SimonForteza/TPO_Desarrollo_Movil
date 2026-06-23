@@ -25,6 +25,10 @@ public enum Categoria {
         return dbValue;
     }
 
+    public int getRank() {
+        return rank;
+    }
+
     public static Categoria from(String value) {
         return Arrays.stream(values())
                 .filter(c -> c.dbValue.equalsIgnoreCase(value))

@@ -4,8 +4,10 @@ import com.example.backend.auth.entity.Usuario;
 import com.example.backend.auth.repository.UsuarioRepository;
 import com.example.backend.bienes.repository.BienRepository;
 import com.example.backend.bienes.util.EstadoBien;
+import com.example.backend.categorias.service.CategoriaUsuarioService;
 import com.example.backend.compras.entity.Compra;
 import com.example.backend.compras.repository.CompraRepository;
+import com.example.backend.legacy.entity.Asistente;
 import com.example.backend.legacy.entity.Cliente;
 import com.example.backend.legacy.entity.Duenio;
 import com.example.backend.legacy.entity.ItemCatalogo;
@@ -20,6 +22,7 @@ import com.example.backend.shared.exception.BusinessRuleException;
 import com.example.backend.shared.exception.ResourceNotFoundException;
 import com.example.backend.subastas.dto.CierreLoteResultado;
 import com.example.backend.subastas.dto.CierreSubastaResponse;
+import com.example.backend.subastas.repository.AsistenteRepository;
 import com.example.backend.subastas.repository.ItemCatalogoRepository;
 import com.example.backend.subastas.repository.SubastaRepository;
 import org.springframework.stereotype.Service;
@@ -42,6 +45,8 @@ public class CierreSubastaService {
     private final BienRepository bienRepository;
     private final RegistroDeSubastaRepository registroDeSubastaRepository;
     private final NotificacionService notificacionService;
+    private final AsistenteRepository asistenteRepository;
+    private final CategoriaUsuarioService categoriaUsuarioService;
 
     public CierreSubastaService(SubastaRepository subastaRepository,
                                 ItemCatalogoRepository itemCatalogoRepository,
@@ -50,7 +55,9 @@ public class CierreSubastaService {
                                 UsuarioRepository usuarioRepository,
                                 BienRepository bienRepository,
                                 RegistroDeSubastaRepository registroDeSubastaRepository,
-                                NotificacionService notificacionService) {
+                                NotificacionService notificacionService,
+                                AsistenteRepository asistenteRepository,
+                                CategoriaUsuarioService categoriaUsuarioService) {
         this.subastaRepository = subastaRepository;
         this.itemCatalogoRepository = itemCatalogoRepository;
         this.pujoRepository = pujoRepository;
@@ -59,6 +66,8 @@ public class CierreSubastaService {
         this.bienRepository = bienRepository;
         this.registroDeSubastaRepository = registroDeSubastaRepository;
         this.notificacionService = notificacionService;
+        this.asistenteRepository = asistenteRepository;
+        this.categoriaUsuarioService = categoriaUsuarioService;
     }
 
     /**
@@ -162,6 +171,9 @@ public class CierreSubastaService {
                         String.format("Ganaste \"%s\". Total a pagar: $%s (oferta $%s + comisión $%s). Tenés 72 hs.",
                                 desc, total.toPlainString(), ganadora.getImporte().toPlainString(), comision.toPlainString()),
                         "COMPRA", compra.getId());
+
+                // Una nueva victoria puede mejorar la categoría del ganador.
+                categoriaUsuarioService.recalcular(usuarioGanador);
             }
             resultado = new CierreLoteResultado(item.getIdentificador(), true, false,
                     ganadora.getImporte(), ganadora.getAsistente().getNumeroPostor(), compraGenerada);
@@ -200,6 +212,20 @@ public class CierreSubastaService {
         if (!quedanPendientes) {
             subasta.setEstado("cerrada");
             subastaRepository.save(subasta);
+            recalcularCategoriaParticipantes(subasta);
+        }
+    }
+
+    /**
+     * Al cerrar la subasta, recalcula la categoría de todos sus participantes: la actividad
+     * acumulada (participaciones) puede promover a quienes no ganaron ningún lote.
+     */
+    private void recalcularCategoriaParticipantes(Subasta subasta) {
+        for (Asistente asistente : asistenteRepository.findBySubastaIdentificador(subasta.getIdentificador())) {
+            Cliente cliente = asistente.getCliente();
+            if (cliente == null) continue;
+            usuarioRepository.findByClienteId(cliente.getIdentificador())
+                    .ifPresent(categoriaUsuarioService::recalcular);
         }
     }
 

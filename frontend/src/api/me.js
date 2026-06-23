@@ -23,3 +23,12 @@ export async function getLimiteDisponible() {
     tieneGarantia: data?.tieneGarantia ?? false,
   };
 }
+
+// GET /me/categoria
+// -> ApiResponse<{ actual, siguiente, tiposVerificados, participadas, ganadas,
+//                  reqTipos, reqParticipadas, reqGanadas }>
+// 'siguiente' y los 'req*' son null cuando el usuario ya es platino.
+export async function getCategoria() {
+  const res = await api.get('/me/categoria');
+  return res.data?.data ?? res.data;
+}

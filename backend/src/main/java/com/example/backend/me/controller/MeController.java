@@ -1,6 +1,8 @@
 package com.example.backend.me.controller;
 
 import com.example.backend.auth.entity.Usuario;
+import com.example.backend.categorias.dto.CategoriaProgresoResponse;
+import com.example.backend.categorias.service.CategoriaUsuarioService;
 import com.example.backend.me.dto.LimiteDisponibleResponse;
 import com.example.backend.me.dto.ParticipacionesResponse;
 import com.example.backend.me.service.ParticipacionService;
@@ -21,9 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class MeController {
 
     private final ParticipacionService participacionService;
+    private final CategoriaUsuarioService categoriaUsuarioService;
 
-    public MeController(ParticipacionService participacionService) {
+    public MeController(ParticipacionService participacionService,
+                        CategoriaUsuarioService categoriaUsuarioService) {
         this.participacionService = participacionService;
+        this.categoriaUsuarioService = categoriaUsuarioService;
     }
 
     @GetMapping("/participaciones")
@@ -49,5 +54,17 @@ public class MeController {
             @AuthenticationPrincipal Usuario usuario) {
         LimiteDisponibleResponse result = participacionService.limiteDisponible(usuario);
         return ResponseEntity.ok(ApiResponse.ok("Guarantee limit retrieved", result));
+    }
+
+    @GetMapping("/categoria")
+    @Operation(summary = "Current category and progress toward the next tier (Chunk E)")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Category progress retrieved"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Missing or invalid token")
+    })
+    public ResponseEntity<ApiResponse<CategoriaProgresoResponse>> categoria(
+            @AuthenticationPrincipal Usuario usuario) {
+        CategoriaProgresoResponse result = categoriaUsuarioService.progreso(usuario);
+        return ResponseEntity.ok(ApiResponse.ok("Category progress retrieved", result));
     }
 }
