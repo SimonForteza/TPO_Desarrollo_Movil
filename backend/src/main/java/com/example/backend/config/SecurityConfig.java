@@ -67,6 +67,7 @@ public class SecurityConfig {
                                 "/auth/resetear-password",
                                 "/auth/verificar-disponibilidad",
                                 "/subastas/**",
+                                "/ws/**",
                                 "/auth/refresh",
                                 "/dev/**",
                                 "/swagger-ui/**",
