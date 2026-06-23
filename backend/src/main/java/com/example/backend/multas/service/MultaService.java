@@ -12,6 +12,7 @@ import com.example.backend.multas.dto.MultaDetail;
 import com.example.backend.multas.dto.MultaListItem;
 import com.example.backend.multas.entity.Multa;
 import com.example.backend.multas.repository.MultaRepository;
+import com.example.backend.notificaciones.service.NotificacionService;
 import com.example.backend.saldo.SaldoService;
 import com.example.backend.shared.dto.PagedResponse;
 import com.example.backend.shared.exception.BusinessRuleException;
@@ -45,17 +46,20 @@ public class MultaService {
     private final ItemCatalogoRepository itemCatalogoRepository;
     private final MedioDePagoRepository medioDePagoRepository;
     private final SaldoService saldoService;
+    private final NotificacionService notificacionService;
 
     public MultaService(MultaRepository multaRepository,
                         CompraRepository compraRepository,
                         ItemCatalogoRepository itemCatalogoRepository,
                         MedioDePagoRepository medioDePagoRepository,
-                        SaldoService saldoService) {
+                        SaldoService saldoService,
+                        NotificacionService notificacionService) {
         this.multaRepository = multaRepository;
         this.compraRepository = compraRepository;
         this.itemCatalogoRepository = itemCatalogoRepository;
         this.medioDePagoRepository = medioDePagoRepository;
         this.saldoService = saldoService;
+        this.notificacionService = notificacionService;
     }
 
     // ---------------------------------------------------------------- generación
@@ -78,6 +82,13 @@ public class MultaService {
 
         compra.setEstado("impaga");
         compraRepository.save(compra);
+
+        notificacionService.crear(compra.getUsuarioId(), "MULTA_GENERADA",
+                "Multa por impago",
+                String.format("Se generó una multa de $%s por la compra #%d impaga. Tenés 72 hs para pagarla.",
+                        multa.getImporte().toPlainString(), compra.getId()),
+                "MULTA", multa.getId());
+
         return multa;
     }
 
@@ -109,6 +120,11 @@ public class MultaService {
             if (multa.getVenceEn() != null && multa.getVenceEn().isBefore(ahora)) {
                 multa.setEstado("judicial");
                 multaRepository.save(multa);
+                notificacionService.crear(usuarioId, "MULTA_JUDICIAL",
+                        "Multa enviada a proceso judicial",
+                        String.format("Tu multa de $%s venció sin pago y pasó a proceso judicial.",
+                                multa.getImporte().toPlainString()),
+                        "MULTA", multa.getId());
             }
         }
     }

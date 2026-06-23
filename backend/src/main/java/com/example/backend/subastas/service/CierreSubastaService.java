@@ -14,6 +14,7 @@ import com.example.backend.legacy.entity.Pujo;
 import com.example.backend.legacy.entity.RegistroDeSubasta;
 import com.example.backend.legacy.entity.Subasta;
 import com.example.backend.legacy.repository.RegistroDeSubastaRepository;
+import com.example.backend.notificaciones.service.NotificacionService;
 import com.example.backend.pujas.repository.PujoRepository;
 import com.example.backend.shared.exception.BusinessRuleException;
 import com.example.backend.shared.exception.ResourceNotFoundException;
@@ -40,6 +41,7 @@ public class CierreSubastaService {
     private final UsuarioRepository usuarioRepository;
     private final BienRepository bienRepository;
     private final RegistroDeSubastaRepository registroDeSubastaRepository;
+    private final NotificacionService notificacionService;
 
     public CierreSubastaService(SubastaRepository subastaRepository,
                                 ItemCatalogoRepository itemCatalogoRepository,
@@ -47,7 +49,8 @@ public class CierreSubastaService {
                                 CompraRepository compraRepository,
                                 UsuarioRepository usuarioRepository,
                                 BienRepository bienRepository,
-                                RegistroDeSubastaRepository registroDeSubastaRepository) {
+                                RegistroDeSubastaRepository registroDeSubastaRepository,
+                                NotificacionService notificacionService) {
         this.subastaRepository = subastaRepository;
         this.itemCatalogoRepository = itemCatalogoRepository;
         this.pujoRepository = pujoRepository;
@@ -55,6 +58,7 @@ public class CierreSubastaService {
         this.usuarioRepository = usuarioRepository;
         this.bienRepository = bienRepository;
         this.registroDeSubastaRepository = registroDeSubastaRepository;
+        this.notificacionService = notificacionService;
     }
 
     /**
@@ -149,6 +153,15 @@ public class CierreSubastaService {
                 compra.setPagarAntesDe(LocalDateTime.now().plusHours(72));
                 compraRepository.save(compra);
                 compraGenerada = true;
+
+                String desc = item.getProducto() != null ? item.getProducto().getDescripcionCatalogo() : "Lote #" + item.getIdentificador();
+                BigDecimal comision = item.getComision() != null ? item.getComision() : BigDecimal.ZERO;
+                BigDecimal total = ganadora.getImporte().add(comision);
+                notificacionService.crear(usuarioGanador.getId(), "LOTE_GANADO",
+                        "¡Ganaste un lote!",
+                        String.format("Ganaste \"%s\". Total a pagar: $%s (oferta $%s + comisión $%s). Tenés 72 hs.",
+                                desc, total.toPlainString(), ganadora.getImporte().toPlainString(), comision.toPlainString()),
+                        "COMPRA", compra.getId());
             }
             resultado = new CierreLoteResultado(item.getIdentificador(), true, false,
                     ganadora.getImporte(), ganadora.getAsistente().getNumeroPostor(), compraGenerada);

@@ -128,7 +128,16 @@ export default function HomeScreen({ navigation, route }) {
                 <Text style={styles.categoriaChipText}>Categoría: {capitalizar(categoriaUsuario)}</Text>
               </View>
             ) : null}
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => {
+                if (!usuario) {
+                  navigation.navigate('Login');
+                } else {
+                  navigation.navigate('NotificacionesInbox');
+                }
+              }}
+            >
               <Ionicons name="notifications-outline" size={22} color={colors.primary} />
               <View style={styles.notificationDot} />
             </TouchableOpacity>

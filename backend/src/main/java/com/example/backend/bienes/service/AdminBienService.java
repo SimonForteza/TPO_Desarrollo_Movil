@@ -7,6 +7,9 @@ import com.example.backend.bienes.dto.RechazarBienRequest;
 import com.example.backend.bienes.entity.BienEnConsignacion;
 import com.example.backend.bienes.repository.BienRepository;
 import com.example.backend.bienes.util.EstadoBien;
+import com.example.backend.legacy.entity.Producto;
+import com.example.backend.legacy.repository.ProductoRepository;
+import com.example.backend.notificaciones.service.NotificacionService;
 import com.example.backend.shared.dto.PagedResponse;
 import com.example.backend.shared.exception.BusinessRuleException;
 import com.example.backend.shared.exception.ResourceNotFoundException;
@@ -28,10 +31,16 @@ public class AdminBienService {
 
     private final BienRepository bienRepository;
     private final BienMapper bienMapper;
+    private final NotificacionService notificacionService;
+    private final ProductoRepository productoRepository;
 
-    public AdminBienService(BienRepository bienRepository, BienMapper bienMapper) {
+    public AdminBienService(BienRepository bienRepository, BienMapper bienMapper,
+                            NotificacionService notificacionService,
+                            ProductoRepository productoRepository) {
         this.bienRepository = bienRepository;
         this.bienMapper = bienMapper;
+        this.notificacionService = notificacionService;
+        this.productoRepository = productoRepository;
     }
 
     @Transactional(readOnly = true)
@@ -66,6 +75,13 @@ public class AdminBienService {
         bien.setMotivoRechazo(null);
         bienRepository.save(bien);
 
+        String nombreBien = nombreProducto(bien.getProductoId());
+        notificacionService.crear(bien.getUsuarioId(), "BIEN_ACEPTADO",
+                "Bien aceptado para consignación",
+                String.format("Tu bien \"%s\" fue aceptado. Revisá las condiciones propuestas (precio base y comisión) en Mis Productos.",
+                        nombreBien),
+                "BIEN", bien.getId());
+
         return bienMapper.toDetail(bien);
     }
 
@@ -75,6 +91,13 @@ public class AdminBienService {
         bien.setEstado(EstadoBien.RECHAZADO);
         bien.setMotivoRechazo(req.motivo());
         bienRepository.save(bien);
+
+        String nombreBien = nombreProducto(bien.getProductoId());
+        notificacionService.crear(bien.getUsuarioId(), "BIEN_RECHAZADO",
+                "Bien rechazado",
+                String.format("Tu bien \"%s\" fue rechazado. Motivo: %s",
+                        nombreBien, req.motivo()),
+                "BIEN", bien.getId());
 
         return bienMapper.toDetail(bien);
     }
@@ -88,6 +111,13 @@ public class AdminBienService {
                             + "' state (current: " + bien.getEstado() + ")");
         }
         return bien;
+    }
+
+    private String nombreProducto(Integer productoId) {
+        if (productoId == null) return "Sin nombre";
+        return productoRepository.findById(productoId)
+                .map(Producto::getDescripcionCatalogo)
+                .orElse("Bien #" + productoId);
     }
 
     private PagedResponse<BienListItem> toPagedResponse(Page<BienEnConsignacion> page) {

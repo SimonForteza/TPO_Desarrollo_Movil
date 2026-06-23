@@ -26,6 +26,7 @@ import CuentaSeguridad from '../screens/settings/CuentaSeguridad';
 import EditarPerfil from '../screens/settings/EditarPerfil';
 import CambiarPassword from '../screens/settings/CambiarPassword';
 import Notificaciones from '../screens/settings/Notificaciones';
+import NotificacionesInbox from '../screens/settings/NotificacionesInbox';
 import Preferencias from '../screens/settings/Preferencias';
 import MisProductos from '../screens/products/MisProductos';
 import DetalleProducto from '../screens/products/DetalleProducto';
@@ -88,7 +89,8 @@ export default function AuthStack() {
       <Stack.Screen name="CuentaSeguridad" component={CuentaSeguridad} options={{ title: 'Cuenta y Seguridad' }} />
       <Stack.Screen name="EditarPerfil" component={EditarPerfil} options={{ title: 'Editar Perfil' }} />
       <Stack.Screen name="CambiarPassword" component={CambiarPassword} options={{ title: 'Cambiar Contraseña' }} />
-      <Stack.Screen name="Notificaciones" component={Notificaciones} options={{ title: 'Notificaciones' }} />
+      <Stack.Screen name="Notificaciones" component={Notificaciones} options={{ title: 'Preferencias de notificaciones' }} />
+      <Stack.Screen name="NotificacionesInbox" component={NotificacionesInbox} options={{ title: 'Notificaciones' }} />
       <Stack.Screen name="Preferencias" component={Preferencias} options={{ title: 'Preferencias' }} />
 
       {/* --- FLUJO DE PRODUCTOS / BIENES --- */}

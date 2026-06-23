@@ -1,6 +1,7 @@
 package com.example.backend.pujas.service;
 
 import com.example.backend.auth.entity.Usuario;
+import com.example.backend.auth.repository.UsuarioRepository;
 import com.example.backend.legacy.entity.Asistente;
 import com.example.backend.legacy.entity.Cliente;
 import com.example.backend.legacy.entity.ItemCatalogo;
@@ -11,6 +12,7 @@ import com.example.backend.mediosdepago.entity.MedioDePago;
 import com.example.backend.mediosdepago.repository.MedioDePagoRepository;
 import com.example.backend.multas.repository.MultaRepository;
 import com.example.backend.multas.service.MultaService;
+import com.example.backend.notificaciones.service.NotificacionService;
 import com.example.backend.pujas.dto.PujaHistoryItem;
 import com.example.backend.pujas.dto.PujaRequest;
 import com.example.backend.pujas.dto.PujaResponse;
@@ -46,6 +48,8 @@ public class PujaService {
     private final MultaRepository multaRepository;
     private final MultaService multaService;
     private final RemateService remateService;
+    private final NotificacionService notificacionService;
+    private final UsuarioRepository usuarioRepository;
 
     public PujaService(SubastaRepository subastaRepository,
                        ClienteRepository clienteRepository,
@@ -55,7 +59,9 @@ public class PujaService {
                        MedioDePagoRepository medioDePagoRepository,
                        MultaRepository multaRepository,
                        MultaService multaService,
-                       RemateService remateService) {
+                       RemateService remateService,
+                       NotificacionService notificacionService,
+                       UsuarioRepository usuarioRepository) {
         this.subastaRepository = subastaRepository;
         this.clienteRepository = clienteRepository;
         this.asistenteRepository = asistenteRepository;
@@ -65,6 +71,8 @@ public class PujaService {
         this.multaRepository = multaRepository;
         this.multaService = multaService;
         this.remateService = remateService;
+        this.notificacionService = notificacionService;
+        this.usuarioRepository = usuarioRepository;
     }
 
     public PujaResponse pujar(Usuario usuario, Integer subastaId, PujaRequest req) {
@@ -147,6 +155,21 @@ public class PujaService {
                 }
             }
         }
+
+        // Notify the previous leader that their bid was surpassed (before saving the new bid)
+        pujoRepository.findTopByItemIdentificadorOrderByImporteDesc(req.itemId()).ifPresent(lider -> {
+            if (lider.getAsistente() != null && lider.getAsistente().getCliente() != null) {
+                Integer clienteIdLider = lider.getAsistente().getCliente().getIdentificador();
+                if (!clienteIdLider.equals(usuario.getClienteId())) {
+                    usuarioRepository.findByClienteId(clienteIdLider).ifPresent(usuarioLider ->
+                            notificacionService.crear(usuarioLider.getId(), "PUJA_SUPERADA",
+                                    "Tu puja fue superada",
+                                    String.format("Tu puja en la subasta #%d fue superada. Nueva mejor oferta: $%s.",
+                                            subastaId, req.importe().toPlainString()),
+                                    "SUBASTA", subastaId.longValue()));
+                }
+            }
+        });
 
         Pujo pujo = new Pujo();
         pujo.setAsistente(asistente);

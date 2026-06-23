@@ -14,6 +14,7 @@ import com.example.backend.legacy.entity.Persona;
 import com.example.backend.legacy.repository.ClienteRepository;
 import com.example.backend.legacy.repository.PaisRepository;
 import com.example.backend.legacy.repository.PersonaRepository;
+import com.example.backend.notificaciones.service.NotificacionService;
 import com.example.backend.shared.exception.BusinessRuleException;
 import com.example.backend.shared.exception.ConflictException;
 import com.example.backend.shared.exception.ResourceNotFoundException;
@@ -39,6 +40,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final KycSimulacionService kycSimulacionService;
+    private final NotificacionService notificacionService;
 
     public AuthService(UsuarioRepository usuarioRepository,
                        TokenActivacionRepository tokenActivacionRepository,
@@ -47,7 +49,8 @@ public class AuthService {
                        PaisRepository paisRepository,
                        JwtUtil jwtUtil,
                        PasswordEncoder passwordEncoder,
-                       KycSimulacionService kycSimulacionService) {
+                       KycSimulacionService kycSimulacionService,
+                       NotificacionService notificacionService) {
         this.usuarioRepository = usuarioRepository;
         this.tokenActivacionRepository = tokenActivacionRepository;
         this.personaRepository = personaRepository;
@@ -56,6 +59,7 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
         this.passwordEncoder = passwordEncoder;
         this.kycSimulacionService = kycSimulacionService;
+        this.notificacionService = notificacionService;
     }
 
     public RegistroEtapa1Response registrar(RegistroEtapa1Request req) {
@@ -133,6 +137,11 @@ public class AuthService {
         clienteRepository.findById(usuario.getClienteId()).ifPresent(cliente -> {
             cliente.setAdmitido("si");
         });
+
+        notificacionService.crear(usuario.getId(), "KYC_APROBADO",
+                "Cuenta verificada",
+                "Tu identidad fue verificada. Ya podés inscribirte a subastas y pujar.",
+                null, null);
     }
 
     public LoginResponse login(LoginRequest req) {
