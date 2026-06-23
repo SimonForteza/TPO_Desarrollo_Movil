@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Alert, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { clearTokens, clearUserData, getUserData } from '../../api/session';
-import { getParticipaciones, getLimiteDisponible } from '../../api/me';
+import { getParticipaciones, getLimiteDisponible, getCategoria } from '../../api/me';
 import { colors } from '../../theme/colors';
 import BottomNavBar from '../../components/BottomNavBar';
 
@@ -11,6 +11,7 @@ export default function ProfileScreen({ navigation }) {
   const [user, setUser] = useState(getUserData());
   const [stats, setStats] = useState({ participadas: 0, ganadas: 0, gastado: 0 });
   const [garantia, setGarantia] = useState({ limites: [], tieneGarantia: false });
+  const [categoriaInfo, setCategoriaInfo] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -19,6 +20,7 @@ export default function ProfileScreen({ navigation }) {
       if (u) {
         getParticipaciones('todas').then((d) => setStats(d.stats)).catch(() => {});
         getLimiteDisponible().then(setGarantia).catch(() => {});
+        getCategoria().then(setCategoriaInfo).catch(() => {});
       }
     }, [])
   );
@@ -70,8 +72,18 @@ export default function ProfileScreen({ navigation }) {
   const nombre = user?.nombre ?? '';
   const apellido = user?.apellido ?? '';
   const email = user?.email ?? '';
-  const categoria = user?.categoria ?? '';
+  // La categoría fresca viene de /me/categoria; el user de sesión queda desactualizado tras un upgrade.
+  const categoria = categoriaInfo?.actual ?? user?.categoria ?? '';
   const iniciales = `${nombre.charAt(0)}${apellido.charAt(0)}`.toUpperCase();
+
+  // Filas de progreso hacia el tier siguiente (solo las que el próximo nivel exige).
+  const reqRows = categoriaInfo?.siguiente
+    ? [
+        ['Tipos de medio verificados', categoriaInfo.tiposVerificados, categoriaInfo.reqTipos],
+        ['Participaciones', categoriaInfo.participadas, categoriaInfo.reqParticipadas],
+        ['Lotes ganados', categoriaInfo.ganadas, categoriaInfo.reqGanadas],
+      ].filter(([, , req]) => (req ?? 0) > 0)
+    : [];
 
   const MenuItem = ({ icon, label, onPress, destructive }) => (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
@@ -115,6 +127,42 @@ export default function ProfileScreen({ navigation }) {
             </View>
           ))}
         </View>
+
+        {categoriaInfo && (
+          <View style={styles.improveContainer}>
+            {categoriaInfo.siguiente ? (
+              <View style={styles.improveCard}>
+                <Text style={styles.improveTitle}>Cómo mejorar tu categoría</Text>
+                <Text style={styles.improveSubtitle}>
+                  {`Próximo nivel: ${String(categoriaInfo.siguiente).toUpperCase()}`}
+                </Text>
+                {reqRows.map(([label, actual, req]) => {
+                  const cumplido = (actual ?? 0) >= req;
+                  return (
+                    <View key={label} style={styles.reqRow}>
+                      <Ionicons
+                        name={cumplido ? 'checkmark-circle' : 'ellipse-outline'}
+                        size={18}
+                        color={cumplido ? colors.success : colors.textSecondary}
+                      />
+                      <Text style={styles.reqLabel}>{label}</Text>
+                      <Text style={[styles.reqValue, cumplido && styles.reqValueMet]}>
+                        {`${actual ?? 0}/${req}`}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <View style={styles.improveCard}>
+                <Text style={styles.improveTitle}>🏆 Categoría máxima alcanzada</Text>
+                <Text style={styles.improveSubtitle}>
+                  Llegaste a la categoría más alta. ¡Felicitaciones!
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {garantia.tieneGarantia && (
           <View style={styles.garantiaContainer}>
@@ -174,6 +222,17 @@ const styles = StyleSheet.create({
   statItem: { alignItems: 'center' },
   statValue: { fontSize: 20, fontWeight: 'bold', color: colors.textPrimary },
   statLabel: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
+  improveContainer: { paddingHorizontal: 20, marginBottom: 20 },
+  improveCard: {
+    backgroundColor: '#F5F8FF', borderRadius: 12, padding: 16,
+    borderWidth: 1, borderColor: '#EAEAEA',
+  },
+  improveTitle: { fontSize: 15, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 4 },
+  improveSubtitle: { fontSize: 13, color: colors.textSecondary, marginBottom: 12 },
+  reqRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },
+  reqLabel: { flex: 1, fontSize: 14, color: colors.textPrimary },
+  reqValue: { fontSize: 14, fontWeight: '700', color: colors.textSecondary },
+  reqValueMet: { color: colors.success },
   garantiaContainer: { paddingHorizontal: 20, marginBottom: 20 },
   garantiaCard: {
     backgroundColor: '#F5F8FF', borderRadius: 12, padding: 16, marginBottom: 12,

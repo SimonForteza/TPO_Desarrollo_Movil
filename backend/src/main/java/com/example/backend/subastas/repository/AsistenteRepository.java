@@ -18,6 +18,12 @@ public interface AsistenteRepository extends JpaRepository<Asistente, Integer> {
 
     long countBySubastaIdentificador(Integer subastaId);
 
+    /** Cantidad de subastas en las que participó el cliente (actividad para la categoría). */
+    long countByClienteIdentificador(Integer clienteId);
+
+    /** Inscripciones de una subasta: para recalcular la categoría de todos sus participantes al cerrar. */
+    java.util.List<Asistente> findBySubastaIdentificador(Integer subastaId);
+
     boolean existsByClienteIdentificadorAndSubastaIdentificador(Integer clienteId, Integer subastaId);
 
     Optional<Asistente> findByClienteIdentificadorAndSubastaIdentificador(Integer clienteId, Integer subastaId);

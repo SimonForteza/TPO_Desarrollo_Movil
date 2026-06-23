@@ -1,6 +1,7 @@
 package com.example.backend.mediosdepago.service;
 
 import com.example.backend.auth.entity.Usuario;
+import com.example.backend.categorias.service.CategoriaUsuarioService;
 import com.example.backend.mediosdepago.dto.MedioDePagoRequest;
 import com.example.backend.mediosdepago.dto.MedioDePagoResponse;
 import com.example.backend.mediosdepago.entity.MedioDePago;
@@ -25,11 +26,14 @@ public class MedioDePagoService {
 
     private final MedioDePagoRepository medioDePagoRepository;
     private final AsistenteRepository asistenteRepository;
+    private final CategoriaUsuarioService categoriaUsuarioService;
 
     public MedioDePagoService(MedioDePagoRepository medioDePagoRepository,
-                              AsistenteRepository asistenteRepository) {
+                              AsistenteRepository asistenteRepository,
+                              CategoriaUsuarioService categoriaUsuarioService) {
         this.medioDePagoRepository = medioDePagoRepository;
         this.asistenteRepository = asistenteRepository;
+        this.categoriaUsuarioService = categoriaUsuarioService;
     }
 
     @Transactional(readOnly = true)
@@ -51,6 +55,8 @@ public class MedioDePagoService {
         medio.setDatosEnmascarados(mask(req.numero()));
         medio.setSaldo(resolveSaldo(req));
         medioDePagoRepository.save(medio);
+        // El medio se verifica al instante (mock): un nuevo tipo verificado puede mejorar la categoría.
+        categoriaUsuarioService.recalcular(usuario);
         return toResponse(medio);
     }
 
