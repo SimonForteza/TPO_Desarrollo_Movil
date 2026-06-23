@@ -8,9 +8,14 @@ import com.example.backend.legacy.entity.Cliente;
 import com.example.backend.legacy.entity.ItemCatalogo;
 import com.example.backend.legacy.entity.Subasta;
 import com.example.backend.legacy.repository.ClienteRepository;
+import com.example.backend.me.dto.CategoriaMetric;
+import com.example.backend.me.dto.LimiteDisponibleResponse;
+import com.example.backend.me.dto.LimiteGarantiaMoneda;
 import com.example.backend.me.dto.ParticipacionItem;
 import com.example.backend.me.dto.ParticipacionStats;
 import com.example.backend.me.dto.ParticipacionesResponse;
+import com.example.backend.mediosdepago.entity.MedioDePago;
+import com.example.backend.mediosdepago.repository.MedioDePagoRepository;
 import com.example.backend.multas.service.MultaService;
 import com.example.backend.pujas.repository.PujoRepository;
 import com.example.backend.shared.exception.ResourceNotFoundException;
@@ -24,6 +29,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +42,7 @@ public class ParticipacionService {
     private final CompraRepository compraRepository;
     private final ItemCatalogoRepository itemCatalogoRepository;
     private final PujoRepository pujoRepository;
+    private final MedioDePagoRepository medioDePagoRepository;
     private final MultaService multaService;
 
     public ParticipacionService(ClienteRepository clienteRepository,
@@ -43,12 +50,14 @@ public class ParticipacionService {
                                 CompraRepository compraRepository,
                                 ItemCatalogoRepository itemCatalogoRepository,
                                 PujoRepository pujoRepository,
+                                MedioDePagoRepository medioDePagoRepository,
                                 MultaService multaService) {
         this.clienteRepository = clienteRepository;
         this.asistenteRepository = asistenteRepository;
         this.compraRepository = compraRepository;
         this.itemCatalogoRepository = itemCatalogoRepository;
         this.pujoRepository = pujoRepository;
+        this.medioDePagoRepository = medioDePagoRepository;
         this.multaService = multaService;
     }
 
@@ -80,8 +89,27 @@ public class ParticipacionService {
 
         long ganadasCount = comprasPorSubasta.values().stream().filter(l -> !l.isEmpty()).count();
         BigDecimal gastado = compraRepository.sumTotalPagadoByUsuario(usuario.getId());
+        BigDecimal ofertado = pujoRepository.sumImporteByClienteId(cliente.getIdentificador());
+
+        // Desglose por categoría de subasta (no depende del filtro de la lista).
+        Map<String, long[]> porCategoriaAcc = new LinkedHashMap<>();
+        for (Asistente a : asistentes) {
+            Subasta s = a.getSubasta();
+            if (s == null) continue;
+            String cat = s.getCategoria() != null && !s.getCategoria().isBlank() ? s.getCategoria() : "sin categoría";
+            long[] acc = porCategoriaAcc.computeIfAbsent(cat, k -> new long[2]);
+            acc[0]++; // participadas
+            if (!comprasPorSubasta.getOrDefault(s.getIdentificador(), List.of()).isEmpty()) {
+                acc[1]++; // ganadas
+            }
+        }
+        List<CategoriaMetric> porCategoria = new ArrayList<>();
+        porCategoriaAcc.forEach((cat, acc) -> porCategoria.add(new CategoriaMetric(cat, acc[0], acc[1])));
+
         ParticipacionStats stats = new ParticipacionStats(asistentes.size(), ganadasCount,
-                gastado != null ? gastado : BigDecimal.ZERO);
+                gastado != null ? gastado : BigDecimal.ZERO,
+                ofertado != null ? ofertado : BigDecimal.ZERO,
+                porCategoria);
 
         List<ParticipacionItem> items = new ArrayList<>();
         for (Asistente a : asistentes) {
@@ -122,6 +150,48 @@ public class ParticipacionService {
         }
 
         return new ParticipacionesResponse(stats, items);
+    }
+
+    /**
+     * Límite del cheque-garantía por moneda: cuánto dejó el usuario como garantía (cheques
+     * certificados verificados) y cuánto ya comprometió en compras (pendientes o pagadas).
+     * Sus compras no pueden superar la garantía declarada (enunciado).
+     */
+    public LimiteDisponibleResponse limiteDisponible(Usuario usuario) {
+        // Las compras vencidas deben pasar a impaga antes de medir lo comprometido.
+        multaService.sincronizarVencidas(usuario.getId());
+
+        // Garantía por moneda = Σ saldo de cheques verificados.
+        Map<String, BigDecimal> garantiaPorMoneda = new LinkedHashMap<>();
+        for (MedioDePago cheque :
+                medioDePagoRepository.findByUsuarioIdAndTipoAndEstado(usuario.getId(), "cheque", "verificado")) {
+            BigDecimal saldo = cheque.getSaldo() != null ? cheque.getSaldo() : BigDecimal.ZERO;
+            garantiaPorMoneda.merge(cheque.getMoneda(), saldo, BigDecimal::add);
+        }
+
+        // Utilizado por moneda = Σ montoFinal de compras pendientes/pagadas, según la moneda de su subasta.
+        Map<String, BigDecimal> utilizadoPorMoneda = new HashMap<>();
+        for (Compra compra : compraRepository.findByUsuarioId(usuario.getId())) {
+            if (!"pendiente".equals(compra.getEstado()) && !"pagada".equals(compra.getEstado())) continue;
+            String moneda = monedaDeItem(compra.getItemId());
+            if (moneda == null) continue;
+            BigDecimal monto = compra.getMontoFinal() != null ? compra.getMontoFinal() : BigDecimal.ZERO;
+            utilizadoPorMoneda.merge(moneda, monto, BigDecimal::add);
+        }
+
+        List<LimiteGarantiaMoneda> limites = new ArrayList<>();
+        garantiaPorMoneda.forEach((moneda, garantia) -> {
+            BigDecimal utilizado = utilizadoPorMoneda.getOrDefault(moneda, BigDecimal.ZERO);
+            limites.add(new LimiteGarantiaMoneda(moneda, garantia, utilizado, garantia.subtract(utilizado)));
+        });
+
+        return new LimiteDisponibleResponse(limites, !limites.isEmpty());
+    }
+
+    private String monedaDeItem(Integer itemId) {
+        ItemCatalogo item = itemCatalogoRepository.findById(itemId).orElse(null);
+        if (item == null || item.getCatalogo() == null || item.getCatalogo().getSubasta() == null) return null;
+        return item.getCatalogo().getSubasta().getMoneda();
     }
 
     private boolean matchesFiltro(String resultado, String estado, Asistente a) {

@@ -19,7 +19,7 @@ const fechaCorta = (f) => {
 };
 
 export default function MiHistorial({ navigation }) {
-  const [stats, setStats] = useState({ participadas: 0, ganadas: 0, gastado: 0 });
+  const [stats, setStats] = useState({ participadas: 0, ganadas: 0, gastado: 0, ofertado: 0, porCategoria: [] });
   const [items, setItems] = useState([]);
   const [filtro, setFiltro] = useState('todas');
   const [loading, setLoading] = useState(true);
@@ -92,6 +92,8 @@ export default function MiHistorial({ navigation }) {
     );
   };
 
+  const porCategoria = stats.porCategoria ?? [];
+
   const Header = (
     <View>
       <View style={styles.statsRow}>
@@ -99,6 +101,7 @@ export default function MiHistorial({ navigation }) {
           [stats.participadas, 'Participadas'],
           [stats.ganadas, 'Ganadas'],
           [money(stats.gastado), 'Gastado'],
+          [money(stats.ofertado), 'Ofertado'],
         ].map(([val, label]) => (
           <View key={label} style={styles.statCard}>
             <Text style={styles.statValue}>{val}</Text>
@@ -106,6 +109,18 @@ export default function MiHistorial({ navigation }) {
           </View>
         ))}
       </View>
+
+      {porCategoria.length > 0 && (
+        <View style={styles.categoriaSection}>
+          <Text style={styles.categoriaTitle}>Por categoría</Text>
+          {porCategoria.map((c) => (
+            <View key={c.categoria} style={styles.categoriaRow}>
+              <Text style={styles.categoriaNombre}>{String(c.categoria).toUpperCase()}</Text>
+              <Text style={styles.categoriaStats}>{`participó ${c.participadas} · ganó ${c.ganadas}`}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       <View style={styles.chipsRow}>
         {FILTROS.map((f) => {
@@ -155,13 +170,22 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   listContent: { padding: 20 },
 
-  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
+  statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 18 },
   statCard: {
-    flex: 1, backgroundColor: '#F5F8FF', borderRadius: 12, paddingVertical: 16,
+    width: '47%', flexGrow: 1, backgroundColor: '#F5F8FF', borderRadius: 12, paddingVertical: 16,
     alignItems: 'center', borderWidth: 1, borderColor: '#EAEAEA',
   },
   statValue: { fontSize: 18, fontWeight: 'bold', color: colors.textPrimary },
   statLabel: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
+
+  categoriaSection: {
+    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 18,
+    borderWidth: 1, borderColor: '#EAEAEA',
+  },
+  categoriaTitle: { fontSize: 14, fontWeight: 'bold', color: colors.textSecondary, marginBottom: 10 },
+  categoriaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 },
+  categoriaNombre: { fontSize: 13, fontWeight: '700', color: colors.primary },
+  categoriaStats: { fontSize: 13, color: colors.textSecondary },
 
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   chip: {
