@@ -34,6 +34,12 @@ import SolicitarSubastaForm from '../screens/products/SolicitarSubastaForm';
 import DetalleSubasta from '../screens/subastas/DetalleSubasta';
 import DetalleLote from '../screens/subastas/DetalleLote';
 import PujasEnVivo from '../screens/subastas/PujasEnVivo';
+import MiHistorial from '../screens/profile/MiHistorial';
+import ResumenCompra from '../screens/subastas/ResumenCompra';
+import PagoCompra from '../screens/subastas/PagoCompra';
+import FacturaCompra from '../screens/subastas/FacturaCompra';
+import AccesoRestringido from '../screens/subastas/AccesoRestringido';
+import DetalleMulta from '../screens/subastas/DetalleMulta';
 
 const Stack = createNativeStackNavigator();
 
@@ -103,6 +109,14 @@ export default function AuthStack() {
       <Stack.Screen name="DetalleSubasta" component={DetalleSubasta} options={{ headerShown: false }} />
       <Stack.Screen name="DetalleLote" component={DetalleLote} options={{ headerShown: false }} />
       <Stack.Screen name="PujasEnVivo" component={PujasEnVivo} options={{ headerShown: false }} />
+
+      {/* --- HISTORIAL Y CICLO ECONÓMICO --- */}
+      <Stack.Screen name="MiHistorial" component={MiHistorial} options={{ title: 'Mi historial' }} />
+      <Stack.Screen name="ResumenCompra" component={ResumenCompra} options={{ title: 'Resumen de compra' }} />
+      <Stack.Screen name="PagoCompra" component={PagoCompra} options={{ title: 'Pago' }} />
+      <Stack.Screen name="FacturaCompra" component={FacturaCompra} options={{ title: 'Factura' }} />
+      <Stack.Screen name="AccesoRestringido" component={AccesoRestringido} options={{ title: 'Acceso restringido' }} />
+      <Stack.Screen name="DetalleMulta" component={DetalleMulta} options={{ title: 'Detalle de multa' }} />
     </Stack.Navigator>
   );
 }

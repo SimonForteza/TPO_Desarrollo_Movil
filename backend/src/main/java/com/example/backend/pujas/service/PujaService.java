@@ -10,6 +10,7 @@ import com.example.backend.legacy.repository.ClienteRepository;
 import com.example.backend.mediosdepago.entity.MedioDePago;
 import com.example.backend.mediosdepago.repository.MedioDePagoRepository;
 import com.example.backend.multas.repository.MultaRepository;
+import com.example.backend.multas.service.MultaService;
 import com.example.backend.pujas.dto.PujaHistoryItem;
 import com.example.backend.pujas.dto.PujaRequest;
 import com.example.backend.pujas.dto.PujaResponse;
@@ -43,6 +44,7 @@ public class PujaService {
     private final PujoRepository pujoRepository;
     private final MedioDePagoRepository medioDePagoRepository;
     private final MultaRepository multaRepository;
+    private final MultaService multaService;
     private final RemateService remateService;
 
     public PujaService(SubastaRepository subastaRepository,
@@ -52,6 +54,7 @@ public class PujaService {
                        PujoRepository pujoRepository,
                        MedioDePagoRepository medioDePagoRepository,
                        MultaRepository multaRepository,
+                       MultaService multaService,
                        RemateService remateService) {
         this.subastaRepository = subastaRepository;
         this.clienteRepository = clienteRepository;
@@ -60,6 +63,7 @@ public class PujaService {
         this.pujoRepository = pujoRepository;
         this.medioDePagoRepository = medioDePagoRepository;
         this.multaRepository = multaRepository;
+        this.multaService = multaService;
         this.remateService = remateService;
     }
 
@@ -78,6 +82,10 @@ public class PujaService {
             throw new ForbiddenException("Your category does not allow access to this auction");
         }
 
+        multaService.sincronizarVencidas(usuario.getId());
+        if (multaRepository.existsByUsuarioIdAndEstado(usuario.getId(), "judicial")) {
+            throw new ForbiddenException("Your account is blocked: an unpaid fine moved to a judicial process");
+        }
         if (multaRepository.existsByUsuarioIdAndEstado(usuario.getId(), "pendiente")) {
             throw new ForbiddenException("You have pending fines that must be resolved before bidding");
         }

@@ -22,6 +22,8 @@ public interface AsistenteRepository extends JpaRepository<Asistente, Integer> {
 
     Optional<Asistente> findByClienteIdentificadorAndSubastaIdentificador(Integer clienteId, Integer subastaId);
 
+    java.util.List<Asistente> findByClienteIdentificadorOrderBySubastaFechaDesc(Integer clienteId);
+
     @Query("""
         SELECT COUNT(a) > 0 FROM Asistente a
         WHERE a.medioPagoId = :medioPagoId

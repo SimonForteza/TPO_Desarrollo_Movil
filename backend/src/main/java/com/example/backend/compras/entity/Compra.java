@@ -39,9 +39,14 @@ public class Compra {
     @Column(name = "con_seguro_envio", nullable = false)
     private boolean conSeguroEnvio = false;
 
+    // pendiente | pagada | impaga (vencida sin pago → genera multa)
     @Column(nullable = false)
     private String estado = "pendiente";
 
     @Column(name = "creada_en", nullable = false)
     private LocalDateTime creadaEn = LocalDateTime.now();
+
+    // Plazo para pagar el lote ganado (72 hs desde el cierre). Vencido sin pago → multa.
+    @Column(name = "pagar_antes_de")
+    private LocalDateTime pagarAntesDe;
 }

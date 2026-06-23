@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 
@@ -144,6 +145,8 @@ public class CierreSubastaService {
                 compra.setComision(item.getComision());
                 compra.setCostoEnvio(BigDecimal.ZERO);
                 compra.setEstado("pendiente");
+                // El ganador tiene 72 hs para pagar el lote; vencido sin pago → multa.
+                compra.setPagarAntesDe(LocalDateTime.now().plusHours(72));
                 compraRepository.save(compra);
                 compraGenerada = true;
             }

@@ -23,4 +23,6 @@ public interface PujoRepository extends JpaRepository<Pujo, Integer> {
 
     @Query("SELECT MAX(p.importe) FROM Pujo p WHERE p.item.identificador = :itemId")
     BigDecimal findMaxImporteByItem(@Param("itemId") Integer itemId);
+
+    boolean existsByAsistenteIdentificador(Integer asistenteId);
 }
