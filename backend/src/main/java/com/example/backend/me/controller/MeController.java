@@ -1,6 +1,7 @@
 package com.example.backend.me.controller;
 
 import com.example.backend.auth.entity.Usuario;
+import com.example.backend.me.dto.LimiteDisponibleResponse;
 import com.example.backend.me.dto.ParticipacionesResponse;
 import com.example.backend.me.service.ParticipacionService;
 import com.example.backend.shared.dto.ApiResponse;
@@ -36,5 +37,17 @@ public class MeController {
             @RequestParam(required = false, defaultValue = "todas") String resultado) {
         ParticipacionesResponse result = participacionService.participaciones(usuario, resultado);
         return ResponseEntity.ok(ApiResponse.ok("History retrieved", result));
+    }
+
+    @GetMapping("/limite-disponible")
+    @Operation(summary = "Guarantee (certified cheque) limit available per currency")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Limit retrieved"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Missing or invalid token")
+    })
+    public ResponseEntity<ApiResponse<LimiteDisponibleResponse>> limiteDisponible(
+            @AuthenticationPrincipal Usuario usuario) {
+        LimiteDisponibleResponse result = participacionService.limiteDisponible(usuario);
+        return ResponseEntity.ok(ApiResponse.ok("Guarantee limit retrieved", result));
     }
 }

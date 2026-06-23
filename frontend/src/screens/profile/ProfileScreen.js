@@ -3,13 +3,14 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Alert, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { clearTokens, clearUserData, getUserData } from '../../api/session';
-import { getParticipaciones } from '../../api/me';
+import { getParticipaciones, getLimiteDisponible } from '../../api/me';
 import { colors } from '../../theme/colors';
 import BottomNavBar from '../../components/BottomNavBar';
 
 export default function ProfileScreen({ navigation }) {
   const [user, setUser] = useState(getUserData());
   const [stats, setStats] = useState({ participadas: 0, ganadas: 0, gastado: 0 });
+  const [garantia, setGarantia] = useState({ limites: [], tieneGarantia: false });
 
   useFocusEffect(
     useCallback(() => {
@@ -17,9 +18,12 @@ export default function ProfileScreen({ navigation }) {
       const u = getUserData();
       if (u) {
         getParticipaciones('todas').then((d) => setStats(d.stats)).catch(() => {});
+        getLimiteDisponible().then(setGarantia).catch(() => {});
       }
     }, [])
   );
+
+  const money = (v) => Number(v ?? 0).toLocaleString('es-AR');
 
   const handleCerrarSesion = () => {
     Alert.alert('Cerrar sesión', '¿Seguro que querés salir?', [
@@ -112,6 +116,21 @@ export default function ProfileScreen({ navigation }) {
           ))}
         </View>
 
+        {garantia.tieneGarantia && (
+          <View style={styles.garantiaContainer}>
+            <Text style={styles.sectionTitle}>Garantía disponible</Text>
+            {garantia.limites.map((l) => (
+              <View key={l.moneda} style={styles.garantiaCard}>
+                <Text style={styles.garantiaMoneda}>{l.moneda}</Text>
+                <View style={styles.garantiaRow}>
+                  <Text style={styles.garantiaDisponible}>{`${l.moneda} ${money(l.disponible)}`}</Text>
+                  <Text style={styles.garantiaTotal}>{`de ${l.moneda} ${money(l.garantia)}`}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Gestión de la Cuenta</Text>
           <MenuItem icon="notifications-outline" label="Notificaciones" onPress={() => navigation.navigate('NotificacionesInbox')} />
@@ -155,6 +174,15 @@ const styles = StyleSheet.create({
   statItem: { alignItems: 'center' },
   statValue: { fontSize: 20, fontWeight: 'bold', color: colors.textPrimary },
   statLabel: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
+  garantiaContainer: { paddingHorizontal: 20, marginBottom: 20 },
+  garantiaCard: {
+    backgroundColor: '#F5F8FF', borderRadius: 12, padding: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: '#EAEAEA',
+  },
+  garantiaMoneda: { fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginBottom: 6 },
+  garantiaRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
+  garantiaDisponible: { fontSize: 18, fontWeight: 'bold', color: colors.primary },
+  garantiaTotal: { fontSize: 13, color: colors.textSecondary },
   sectionContainer: { paddingHorizontal: 20 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: colors.textSecondary, marginBottom: 16, marginLeft: 4 },
   menuItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', padding: 18, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#F0F0F0' },

@@ -28,4 +28,12 @@ public interface PujoRepository extends JpaRepository<Pujo, Integer> {
     BigDecimal findMaxImporteByItem(@Param("itemId") Integer itemId);
 
     boolean existsByAsistenteIdentificador(Integer asistenteId);
+
+    /** Total ofertado por un cliente: suma de los importes de todas sus pujas (métrica "Ofertado"). */
+    @Query("""
+        SELECT COALESCE(SUM(p.importe), 0)
+        FROM Pujo p
+        WHERE p.asistente.cliente.identificador = :clienteId
+        """)
+    BigDecimal sumImporteByClienteId(@Param("clienteId") Integer clienteId);
 }
