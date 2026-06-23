@@ -22,6 +22,10 @@ public class Multa {
     @Column(name = "usuario_id", nullable = false)
     private Long usuarioId;
 
+    // Compra impaga que originó la multa (permite derivar subasta/lote para el detalle).
+    @Column(name = "compra_id")
+    private Long compraId;
+
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal importe;
 

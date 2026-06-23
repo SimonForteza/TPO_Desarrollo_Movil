@@ -4,12 +4,14 @@ import com.example.backend.auth.entity.Usuario;
 import com.example.backend.compras.dto.CompraDetail;
 import com.example.backend.compras.dto.CompraListItem;
 import com.example.backend.compras.dto.FacturaResponse;
+import com.example.backend.compras.dto.PagarCompraRequest;
 import com.example.backend.compras.service.CompraService;
 import com.example.backend.shared.dto.ApiResponse;
 import com.example.backend.shared.dto.PagedResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -52,6 +54,24 @@ public class CompraController {
             @PathVariable Long id) {
         CompraDetail result = compraService.detail(usuario, id);
         return ResponseEntity.ok(ApiResponse.ok("Purchase retrieved", result));
+    }
+
+    @PostMapping("/{id}/pagar")
+    @Operation(summary = "Pay a won lot (deferred, mocked); choose payment method and delivery")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Purchase paid"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Missing or invalid token"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Payment method not owned"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Purchase not found"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Purchase already paid"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "422", description = "Insufficient funds (a fine was generated)")
+    })
+    public ResponseEntity<ApiResponse<CompraDetail>> pagar(
+            @AuthenticationPrincipal Usuario usuario,
+            @PathVariable Long id,
+            @Valid @RequestBody PagarCompraRequest req) {
+        CompraDetail result = compraService.pagar(usuario, id, req);
+        return ResponseEntity.ok(ApiResponse.ok("Purchase paid", result));
     }
 
     @GetMapping("/{id}/factura")

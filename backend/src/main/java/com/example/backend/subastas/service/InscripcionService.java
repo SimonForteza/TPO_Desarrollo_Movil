@@ -8,6 +8,7 @@ import com.example.backend.legacy.repository.ClienteRepository;
 import com.example.backend.mediosdepago.entity.MedioDePago;
 import com.example.backend.mediosdepago.repository.MedioDePagoRepository;
 import com.example.backend.multas.repository.MultaRepository;
+import com.example.backend.multas.service.MultaService;
 import com.example.backend.shared.exception.BusinessRuleException;
 import com.example.backend.shared.exception.ConflictException;
 import com.example.backend.shared.exception.ForbiddenException;
@@ -31,17 +32,30 @@ public class InscripcionService {
     private final AsistenteRepository asistenteRepository;
     private final MedioDePagoRepository medioDePagoRepository;
     private final MultaRepository multaRepository;
+    private final MultaService multaService;
 
     public InscripcionService(SubastaRepository subastaRepository,
                               ClienteRepository clienteRepository,
                               AsistenteRepository asistenteRepository,
                               MedioDePagoRepository medioDePagoRepository,
-                              MultaRepository multaRepository) {
+                              MultaRepository multaRepository,
+                              MultaService multaService) {
         this.subastaRepository = subastaRepository;
         this.clienteRepository = clienteRepository;
         this.asistenteRepository = asistenteRepository;
         this.medioDePagoRepository = medioDePagoRepository;
         this.multaRepository = multaRepository;
+        this.multaService = multaService;
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isInscripto(Usuario usuario, Integer subastaId) {
+        if (usuario == null) return false;
+        Cliente cliente = clienteRepository.findById(usuario.getClienteId()).orElse(null);
+        if (cliente == null) return false;
+        return asistenteRepository
+                .findByClienteIdentificadorAndSubastaIdentificador(cliente.getIdentificador(), subastaId)
+                .isPresent();
     }
 
     public InscripcionResponse inscribir(Usuario usuario, Integer subastaId, InscripcionRequest req) {
@@ -59,6 +73,10 @@ public class InscripcionService {
             throw new ForbiddenException("Your category does not allow access to this auction");
         }
 
+        multaService.sincronizarVencidas(usuario.getId());
+        if (multaRepository.existsByUsuarioIdAndEstado(usuario.getId(), "judicial")) {
+            throw new ForbiddenException("Your account is blocked: an unpaid fine moved to a judicial process");
+        }
         if (multaRepository.existsByUsuarioIdAndEstado(usuario.getId(), "pendiente")) {
             throw new ForbiddenException("You have pending fines that must be resolved before inscribing");
         }

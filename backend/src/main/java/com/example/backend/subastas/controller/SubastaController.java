@@ -63,6 +63,14 @@ public class SubastaController {
         return ResponseEntity.ok(ApiResponse.ok("Item detail", result));
     }
 
+    @GetMapping("/{id}/inscripcion")
+    public ResponseEntity<ApiResponse<Boolean>> inscripcion(
+            @AuthenticationPrincipal Usuario usuario,
+            @PathVariable Integer id) {
+        boolean inscripto = inscripcionService.isInscripto(usuario, id);
+        return ResponseEntity.ok(ApiResponse.ok("Inscription status", inscripto));
+    }
+
     @PostMapping("/{id}/inscribirse")
     public ResponseEntity<ApiResponse<InscripcionResponse>> inscribirse(
             @AuthenticationPrincipal Usuario usuario,

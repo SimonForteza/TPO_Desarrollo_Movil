@@ -5,6 +5,5 @@ public record CierreSubastaResponse(
         String estado,
         int totalItems,
         int comprasGeneradas,
-        int itemsCompradosPorEmpresa,
-        int itemsSinFondos
+        int itemsCompradosPorEmpresa
 ) {}

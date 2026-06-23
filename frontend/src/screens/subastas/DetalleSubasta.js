@@ -71,6 +71,7 @@ export default function DetalleSubasta({ route, navigation }) {
       subastaId: id,
       medioPagoId: medio?.id,
       moneda: subasta?.moneda,
+      categoria: subasta?.categoria,
     });
   };
 
@@ -79,24 +80,29 @@ export default function DetalleSubasta({ route, navigation }) {
     if (!medio) {
       Alert.alert(
         'Medio de pago requerido',
-        `Necesitás un medio de pago verificado en ${subasta?.moneda || 'la moneda de la subasta'} para unirte. Agregalo desde Medios de Pago.`
+        `Necesitás un medio de pago verificado en ${subasta?.moneda || 'la moneda de la subasta'} para unirte. Agregalo desde tu perfil en Medios de Pago.`
       );
       return;
     }
     setUniendo(true);
     try {
       await unirseASubasta(id, medio.id);
-      Alert.alert(
-        'Te uniste a la subasta',
-        '¿Querés ir a la sala de pujas ahora?',
-        [
-          { text: 'Ahora no', style: 'cancel' },
-          { text: 'Ir a sala de pujas', onPress: irASalaDePujas },
-        ]
-      );
+      irASalaDePujas();
     } catch (error) {
-      const msg = error.response?.data?.message || 'No se pudo unir a la subasta.';
-      Alert.alert('No se pudo unir', msg);
+      const status = error.response?.status;
+      const msg = error.response?.data?.message || '';
+      if (status === 409 && msg.includes('already registered in an active auction')) {
+        Alert.alert('Ya estás inscripto', 'Ya tenés una subasta activa. Podés ir a la sala de pujas.', [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Ir a sala de pujas', onPress: irASalaDePujas },
+        ]);
+      } else if (status === 403 && msg.includes('category')) {
+        Alert.alert('Categoría insuficiente', 'Tu categoría no permite acceder a esta subasta.');
+      } else if (status === 403 && msg.includes('fines')) {
+        Alert.alert('Tenés una multa pendiente', 'Debés resolver tu multa antes de inscribirte.');
+      } else {
+        Alert.alert('No se pudo inscribir', msg || 'Intentá de nuevo más tarde.');
+      }
     } finally {
       setUniendo(false);
     }
@@ -175,7 +181,17 @@ export default function DetalleSubasta({ route, navigation }) {
             const prod = item.producto || {};
             const base = formatMoneda(item.precioBase);
             return (
-              <View key={item.id || idx} style={styles.loteCard}>
+              <TouchableOpacity
+                key={item.id || idx}
+                style={styles.loteCard}
+                onPress={() => navigation.navigate('DetalleLote', {
+                  subastaId: id,
+                  itemId: item.id,
+                  moneda: subasta?.moneda,
+                  categoria: subasta?.categoria,
+                  medioPagoId: medio?.id,
+                })}
+              >
                 <View style={styles.loteThumb}>
                   {prod.primeraFotoBase64 ? (
                     <Image
@@ -193,7 +209,8 @@ export default function DetalleSubasta({ route, navigation }) {
                   </Text>
                   {base ? <Text style={styles.loteBase}>Base: {base}</Text> : null}
                 </View>
-              </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
             );
           })
         )}
