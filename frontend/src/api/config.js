@@ -1,4 +1,11 @@
-// 10.0.2.2 = Android emulator → localhost del host
-// localhost = browser (web) o iOS simulator
+// Cambiá USE_REMOTE a false para desarrollar contra el backend local.
+const USE_REMOTE = true;
+
+// Backend deployado en Railway (Supabase vía Session pooler).
+const REMOTE_URL = 'https://tpodesarrollomovil-production.up.railway.app';
+
+// 10.0.2.2 = emulador Android → localhost del host; localhost = web / iOS sim.
 const isWeb = typeof document !== 'undefined';
-export const API_URL = isWeb ? 'http://localhost:8080' : 'http://10.0.2.2:8080';
+const LOCAL_URL = isWeb ? 'http://localhost:8080' : 'http://10.0.2.2:8080';
+
+export const API_URL = USE_REMOTE ? REMOTE_URL : LOCAL_URL;
