@@ -3,15 +3,21 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Alert, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { clearTokens, clearUserData, getUserData } from '../../api/session';
+import { getParticipaciones } from '../../api/me';
 import { colors } from '../../theme/colors';
 import BottomNavBar from '../../components/BottomNavBar';
 
 export default function ProfileScreen({ navigation }) {
   const [user, setUser] = useState(getUserData());
+  const [stats, setStats] = useState({ participadas: 0, ganadas: 0, gastado: 0 });
 
   useFocusEffect(
     useCallback(() => {
       setUser(getUserData());
+      const u = getUserData();
+      if (u) {
+        getParticipaciones('todas').then((d) => setStats(d.stats)).catch(() => {});
+      }
     }, [])
   );
 
@@ -94,7 +100,11 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         <View style={styles.statsRow}>
-          {[['0', 'Subastas'], ['0', 'Ganadas'], ['0', 'Vendidas']].map(([val, label]) => (
+          {[
+            [stats.participadas, 'Subastas'],
+            [stats.ganadas, 'Ganadas'],
+            [`$ ${Number(stats.gastado ?? 0).toLocaleString('es-AR')}`, 'Gastado'],
+          ].map(([val, label]) => (
             <View key={label} style={styles.statItem}>
               <Text style={styles.statValue}>{val}</Text>
               <Text style={styles.statLabel}>{label}</Text>
@@ -105,7 +115,8 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Gestión de la Cuenta</Text>
           <MenuItem icon="card-outline" label="Medios de Pago" onPress={() => navigation.navigate('AddPaymentMethod')} />
-          <MenuItem icon="time-outline" label="Historial de Participaciones" onPress={() => Alert.alert('Info', 'Próximamente')} />
+          <MenuItem icon="wallet-outline" label="Cuentas de Cobro" onPress={() => navigation.navigate('MisCuentasCobro')} />
+          <MenuItem icon="time-outline" label="Historial de Participaciones" onPress={() => navigation.navigate('MiHistorial')} />
           <MenuItem icon="settings-outline" label="Configuración" onPress={() => navigation.navigate('Configuracion')} />
           <MenuItem icon="log-out-outline" label="Cerrar Sesión" onPress={handleCerrarSesion} destructive />
         </View>

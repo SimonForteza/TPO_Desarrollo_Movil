@@ -14,4 +14,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     // Verificar si existe por email (booleano es más rápido que Optional)
     boolean existsByEmail(String email);
+
+    // Mapea un cliente legacy a su usuario (usado al cerrar subasta para asignar la compra al ganador)
+    Optional<Usuario> findByClienteId(Integer clienteId);
 }

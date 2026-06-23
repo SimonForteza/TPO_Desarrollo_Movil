@@ -19,6 +19,8 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import FormCuentaBancaria from '../screens/payments/FormCuentaBancaria';
 import FormTarjetaCredito from '../screens/payments/FormTarjetaCredito';
 import FormCheque from '../screens/payments/FormCheque';
+import MisCuentasCobro from '../screens/payments/MisCuentasCobro';
+import FormCuentaCobro from '../screens/payments/FormCuentaCobro';
 import Configuracion from '../screens/settings/Configuracion';
 import CuentaSeguridad from '../screens/settings/CuentaSeguridad';
 import EditarPerfil from '../screens/settings/EditarPerfil';
@@ -30,7 +32,14 @@ import DetalleProducto from '../screens/products/DetalleProducto';
 import SolicitarSubastaInfo from '../screens/products/SolicitarSubastaInfo';
 import SolicitarSubastaForm from '../screens/products/SolicitarSubastaForm';
 import DetalleSubasta from '../screens/subastas/DetalleSubasta';
+import DetalleLote from '../screens/subastas/DetalleLote';
 import PujasEnVivo from '../screens/subastas/PujasEnVivo';
+import MiHistorial from '../screens/profile/MiHistorial';
+import ResumenCompra from '../screens/subastas/ResumenCompra';
+import PagoCompra from '../screens/subastas/PagoCompra';
+import FacturaCompra from '../screens/subastas/FacturaCompra';
+import AccesoRestringido from '../screens/subastas/AccesoRestringido';
+import DetalleMulta from '../screens/subastas/DetalleMulta';
 
 const Stack = createNativeStackNavigator();
 
@@ -71,6 +80,8 @@ export default function AuthStack() {
       <Stack.Screen name="FormCuentaBancaria" component={FormCuentaBancaria} options={{ title: 'Agregar cuenta bancaria' }} />
       <Stack.Screen name="FormTarjetaCredito" component={FormTarjetaCredito} options={{ title: 'Agregar tarjeta' }} />
       <Stack.Screen name="FormCheque" component={FormCheque} options={{ title: 'Agregar cheque' }} />
+      <Stack.Screen name="MisCuentasCobro" component={MisCuentasCobro} options={{ title: 'Mis cuentas de cobro' }} />
+      <Stack.Screen name="FormCuentaCobro" component={FormCuentaCobro} options={{ title: 'Agregar cuenta de cobro' }} />
 
       {/* --- FLUJO DE CONFIGURACIÓN --- */}
       <Stack.Screen name="Configuracion" component={Configuracion} options={{ title: 'Configuración' }} />
@@ -96,7 +107,16 @@ export default function AuthStack() {
 
       {/* --- DETALLE DE SUBASTA --- */}
       <Stack.Screen name="DetalleSubasta" component={DetalleSubasta} options={{ headerShown: false }} />
+      <Stack.Screen name="DetalleLote" component={DetalleLote} options={{ headerShown: false }} />
       <Stack.Screen name="PujasEnVivo" component={PujasEnVivo} options={{ headerShown: false }} />
+
+      {/* --- HISTORIAL Y CICLO ECONÓMICO --- */}
+      <Stack.Screen name="MiHistorial" component={MiHistorial} options={{ title: 'Mi historial' }} />
+      <Stack.Screen name="ResumenCompra" component={ResumenCompra} options={{ title: 'Resumen de compra' }} />
+      <Stack.Screen name="PagoCompra" component={PagoCompra} options={{ title: 'Pago' }} />
+      <Stack.Screen name="FacturaCompra" component={FacturaCompra} options={{ title: 'Factura' }} />
+      <Stack.Screen name="AccesoRestringido" component={AccesoRestringido} options={{ title: 'Acceso restringido' }} />
+      <Stack.Screen name="DetalleMulta" component={DetalleMulta} options={{ title: 'Detalle de multa' }} />
     </Stack.Navigator>
   );
 }

@@ -36,8 +36,29 @@ export async function getPujas(subastaId, params = {}) {
   return Array.isArray(data) ? data : (data?.content ?? []);
 }
 
+// GET /subastas/{id}/catalogo/{itemId} -> ApiResponse<CatalogoItemDetailResponse>
+export async function getItemCatalogo(subastaId, itemId) {
+  const res = await api.get(`/subastas/${subastaId}/catalogo/${itemId}`);
+  return res.data?.data ?? res.data;
+}
+
+// GET /subastas/{id}/inscripcion -> ApiResponse<Boolean>
+export async function getInscripcion(subastaId) {
+  const res = await api.get(`/subastas/${subastaId}/inscripcion`);
+  return res.data?.data ?? false;
+}
+
 // POST /subastas/{id}/pujar -> ApiResponse<PujaResponse>
 export async function realizarPuja(subastaId, { itemId, importe, medioPagoId }) {
   const res = await api.post(`/subastas/${subastaId}/pujar`, { itemId, importe, medioPagoId });
+  return res.data?.data ?? res.data;
+}
+
+// GET /subastas/{id}/remate -> ApiResponse<RemateEstadoResponse>
+// Estado autoritativo del remate en vivo: lote actual, segundos restantes (server-side),
+// y lotes ya vendidos con su monto. Consultar este endpoint también dispara el martillo
+// del lote actual si su tiempo venció (cierre lazy en el backend).
+export async function getRemate(subastaId) {
+  const res = await api.get(`/subastas/${subastaId}/remate`);
   return res.data?.data ?? res.data;
 }

@@ -5,6 +5,7 @@ import com.example.backend.bienes.dto.*;
 import com.example.backend.bienes.entity.BienEnConsignacion;
 import com.example.backend.bienes.repository.BienRepository;
 import com.example.backend.bienes.util.EstadoBien;
+import com.example.backend.cuentascobro.repository.CuentaCobroRepository;
 import com.example.backend.legacy.entity.*;
 import com.example.backend.legacy.repository.*;
 import com.example.backend.shared.dto.PagedResponse;
@@ -33,6 +34,7 @@ public class BienService {
     private final DuenioRepository duenioRepository;
     private final ProductoRepository productoRepository;
     private final FotoRepository fotoRepository;
+    private final CuentaCobroRepository cuentaCobroRepository;
     private final BienMapper bienMapper;
 
     public BienService(BienRepository bienRepository,
@@ -40,12 +42,14 @@ public class BienService {
                        DuenioRepository duenioRepository,
                        ProductoRepository productoRepository,
                        FotoRepository fotoRepository,
+                       CuentaCobroRepository cuentaCobroRepository,
                        BienMapper bienMapper) {
         this.bienRepository = bienRepository;
         this.clienteRepository = clienteRepository;
         this.duenioRepository = duenioRepository;
         this.productoRepository = productoRepository;
         this.fotoRepository = fotoRepository;
+        this.cuentaCobroRepository = cuentaCobroRepository;
         this.bienMapper = bienMapper;
     }
 
@@ -60,6 +64,11 @@ public class BienService {
     }
 
     public BienDetail solicitar(Usuario usuario, BienRequest req) {
+        if (!cuentaCobroRepository.existsByUsuarioId(usuario.getId())) {
+            throw new BusinessRuleException(
+                    "Debes declarar al menos una cuenta de cobro antes de consignar un bien");
+        }
+
         Cliente cliente = clienteRepository.findById(usuario.getClienteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Client profile not found"));
 
