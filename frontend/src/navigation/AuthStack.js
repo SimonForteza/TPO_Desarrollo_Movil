@@ -41,6 +41,8 @@ import PagoCompra from '../screens/subastas/PagoCompra';
 import FacturaCompra from '../screens/subastas/FacturaCompra';
 import AccesoRestringido from '../screens/subastas/AccesoRestringido';
 import DetalleMulta from '../screens/subastas/DetalleMulta';
+import MisCompras from '../screens/subastas/MisCompras';
+import MisMultas from '../screens/subastas/MisMultas';
 
 const Stack = createNativeStackNavigator();
 
@@ -119,6 +121,8 @@ export default function AuthStack() {
       <Stack.Screen name="FacturaCompra" component={FacturaCompra} options={{ title: 'Factura' }} />
       <Stack.Screen name="AccesoRestringido" component={AccesoRestringido} options={{ title: 'Acceso restringido' }} />
       <Stack.Screen name="DetalleMulta" component={DetalleMulta} options={{ title: 'Detalle de multa' }} />
+      <Stack.Screen name="MisCompras" component={MisCompras} options={{ title: 'Mis Compras' }} />
+      <Stack.Screen name="MisMultas" component={MisMultas} options={{ title: 'Mis Multas' }} />
     </Stack.Navigator>
   );
 }

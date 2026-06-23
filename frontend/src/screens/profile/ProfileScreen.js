@@ -185,6 +185,8 @@ export default function ProfileScreen({ navigation }) {
           <MenuItem icon="card-outline" label="Medios de Pago" onPress={() => navigation.navigate('AddPaymentMethod')} />
           <MenuItem icon="wallet-outline" label="Cuentas de Cobro" onPress={() => navigation.navigate('MisCuentasCobro')} />
           <MenuItem icon="time-outline" label="Historial de Participaciones" onPress={() => navigation.navigate('MiHistorial')} />
+          <MenuItem icon="bag-handle-outline" label="Mis Compras" onPress={() => navigation.navigate('MisCompras')} />
+          <MenuItem icon="alert-circle-outline" label="Mis Multas" onPress={() => navigation.navigate('MisMultas')} />
           <MenuItem icon="settings-outline" label="Configuración" onPress={() => navigation.navigate('Configuracion')} />
           <MenuItem icon="log-out-outline" label="Cerrar Sesión" onPress={handleCerrarSesion} destructive />
         </View>

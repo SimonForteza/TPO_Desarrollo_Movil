@@ -5,7 +5,6 @@ import { getCompra, pagarCompra } from '../../api/compras';
 import { getMediosPago } from '../../api/mediosPago';
 import { colors } from '../../theme/colors';
 
-const COSTO_ENVIO = 2500;
 const money = (v) => `$ ${Number(v ?? 0).toLocaleString('es-AR')}`;
 
 const TIPO_LABEL = {
@@ -82,7 +81,7 @@ export default function PagoCompra({ navigation, route }) {
     );
   }
 
-  const costoEnvio = retiraPersonalmente ? 0 : COSTO_ENVIO;
+  const costoEnvio = retiraPersonalmente ? 0 : (compra?.costoEnvio ?? 0);
   const total = Number(compra?.montoFinal ?? 0) + Number(compra?.comision ?? 0) + costoEnvio;
 
   return (

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import api from '../../api/axiosConfig';
 import { getSubastas } from '../../api/subastas';
+import { getNotificaciones } from '../../api/notificaciones';
 import { clearPendingRegistration, getPendingRegistration, getUserData, setUserData } from '../../api/session';
 import BottomNavBar from '../../components/BottomNavBar';
 import { colors } from '../../theme/colors';
@@ -26,6 +27,7 @@ export default function HomeScreen({ navigation, route }) {
   const [usuario, setUsuario] = useState(route.params?.user || getUserData());
   const [kycAprobado, setKycAprobado] = useState(false);
   const [tokenActivacion, setTokenActivacion] = useState(null);
+  const [noLeidas, setNoLeidas] = useState(0);
   const [chipActivo, setChipActivo] = useState('Todas');
   const [busqueda, setBusqueda] = useState('');
   const [subastas, setSubastas] = useState([]);
@@ -35,14 +37,18 @@ export default function HomeScreen({ navigation, route }) {
 
   // Cargar datos del usuario si no están en memoria (ej: reinicio de la app)
   useEffect(() => {
-    if (usuario) return;
+    if (usuario) {
+      getNotificaciones(false).then((list) => setNoLeidas(list?.length ?? 0)).catch(() => {});
+      return;
+    }
     api.get('/auth/me')
       .then((res) => {
         const data = res.data?.data ?? res.data;
         setUserData(data);
         setUsuario(data);
+        getNotificaciones(false).then((list) => setNoLeidas(list?.length ?? 0)).catch(() => {});
       })
-      .catch(() => {});
+      .catch((e) => console.warn('auth/me failed:', e?.response?.status));
   }, []);
 
   useEffect(() => {
@@ -139,7 +145,7 @@ export default function HomeScreen({ navigation, route }) {
               }}
             >
               <Ionicons name="notifications-outline" size={22} color={colors.primary} />
-              <View style={styles.notificationDot} />
+              {noLeidas > 0 && <View style={styles.notificationDot} />}
             </TouchableOpacity>
           </View>
         </View>
