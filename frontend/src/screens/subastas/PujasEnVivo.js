@@ -324,6 +324,16 @@ export default function PujasEnVivo({ route, navigation }) {
                   <Text style={[styles.rangoText, { color: colors.primary }]}>Sin límite de puja</Text>
                 </View>
               )}
+              <TouchableOpacity
+                style={styles.verDetalleRow}
+                onPress={() => navigation.navigate('DetalleLote', {
+                  subastaId, itemId: loteActualId, moneda, categoria, medioPagoId,
+                })}
+              >
+                <Ionicons name="image-outline" size={16} color={colors.primary} />
+                <Text style={styles.verDetalleText}>Ver detalle del producto</Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.primary} style={{ marginLeft: 'auto' }} />
+              </TouchableOpacity>
             </View>
           )}
 
@@ -478,6 +488,8 @@ const styles = StyleSheet.create({
   priceValue: { fontSize: 17, fontWeight: 'bold', color: colors.textPrimary },
   rangoRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#E8EEF5' },
   rangoText: { fontSize: 12, color: colors.textSecondary },
+  verDetalleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#E8EEF5' },
+  verDetalleText: { fontSize: 13, color: colors.primary, fontWeight: '600' },
 
   historialHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#EEE' },
   historialTitle: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
