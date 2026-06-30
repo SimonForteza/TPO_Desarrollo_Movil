@@ -34,8 +34,8 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class CompraService {
 
-    // Costo de envío mockeado (alineado con el wireframe "Envío estimado $2.500").
-    private static final BigDecimal COSTO_ENVIO_MOCK = new BigDecimal("2500.00");
+    // Costo de envío mockeado (alineado con el wireframe "Envío estimado $5.000").
+    public static final BigDecimal COSTO_ENVIO_MOCK = new BigDecimal("5000.00");
 
     private final CompraRepository compraRepository;
     private final ItemCatalogoRepository itemCatalogoRepository;

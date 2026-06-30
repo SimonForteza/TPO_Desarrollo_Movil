@@ -7,6 +7,7 @@ import com.example.backend.bienes.util.EstadoBien;
 import com.example.backend.categorias.service.CategoriaUsuarioService;
 import com.example.backend.compras.entity.Compra;
 import com.example.backend.compras.repository.CompraRepository;
+import com.example.backend.compras.service.CompraService;
 import com.example.backend.legacy.entity.Asistente;
 import com.example.backend.legacy.entity.Cliente;
 import com.example.backend.legacy.entity.Duenio;
@@ -156,7 +157,9 @@ public class CierreSubastaService {
                 compra.setItemId(item.getIdentificador());
                 compra.setMontoFinal(ganadora.getImporte());
                 compra.setComision(item.getComision());
-                compra.setCostoEnvio(BigDecimal.ZERO);
+                // Estimado de envío (envío a domicilio por defecto). Se recalcula al pagar:
+                // si el ganador elige retiro en persona, CompraService lo pone en 0.
+                compra.setCostoEnvio(CompraService.COSTO_ENVIO_MOCK);
                 compra.setEstado("pendiente");
                 // El ganador tiene 72 hs para pagar el lote; vencido sin pago → multa.
                 compra.setPagarAntesDe(LocalDateTime.now().plusHours(72));
