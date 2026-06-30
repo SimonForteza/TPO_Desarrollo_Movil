@@ -71,10 +71,10 @@ export default function MisCompras({ navigation }) {
     filtro === 'todas' ? compras : compras.filter((c) => c.estado === filtro);
 
   const handleTap = (compra) => {
-    if (compra.estado === 'pendiente') {
-      navigation.navigate('ResumenCompra', { compraId: compra.id, titulo: compra.descripcionItem });
-    } else {
+    if (compra.estado === 'pagada') {
       navigation.navigate('FacturaCompra', { compraId: compra.id });
+    } else {
+      navigation.navigate('ResumenCompra', { compraId: compra.id, titulo: compra.descripcionItem });
     }
   };
 
@@ -158,7 +158,7 @@ function CompraCard({ compra, onPress }) {
         <Text style={styles.footerDate}>{formatFecha(compra.creadaEn) ?? ''}</Text>
         <View style={styles.footerAction}>
           <Text style={styles.footerActionText}>
-            {compra.estado === 'pendiente' ? 'Pagar' : 'Ver factura'}
+            {compra.estado === 'pagada' ? 'Ver factura' : 'Pagar'}
           </Text>
           <Ionicons name="chevron-forward" size={14} color={colors.primary} />
         </View>

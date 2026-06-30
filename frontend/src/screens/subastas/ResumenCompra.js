@@ -47,18 +47,31 @@ export default function ResumenCompra({ navigation, route }) {
   }
 
   const costoEnvio = retiraPersonalmente ? 0 : (compra?.costoEnvio ?? 0);
-  const total = Number(compra.montoFinal ?? 0) + Number(compra.comision ?? 0) + costoEnvio;
+  const multa = Number(compra?.multaPendiente ?? 0);
+  const total = Number(compra.montoFinal ?? 0) + Number(compra.comision ?? 0) + costoEnvio + multa;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>Resumen de compra</Text>
       {!!titulo && <Text style={styles.subtitulo}>{titulo}</Text>}
 
+      {multa > 0 && (
+        <View style={styles.multaAviso}>
+          <Ionicons name="warning-outline" size={16} color={colors.danger} />
+          <Text style={styles.multaAvisoText}>
+            Este pago incluye una multa por impago que se saldará junto con la compra.
+          </Text>
+        </View>
+      )}
+
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Desglose</Text>
         <Row label="Precio subasta" value={money(compra.montoFinal)} />
         <Row label="Comisión (10%)" value={money(compra.comision)} />
         <Row label="Envío estimado" value={retiraPersonalmente ? '—' : money(costoEnvio)} />
+        {multa > 0 && (
+          <Row label="Multa por impago (10%)" value={money(multa)} danger />
+        )}
         <View style={styles.divider} />
         <Row label="Total a pagar" value={money(total)} bold />
       </View>
@@ -99,11 +112,11 @@ export default function ResumenCompra({ navigation, route }) {
   );
 }
 
-function Row({ label, value, bold }) {
+function Row({ label, value, bold, danger }) {
   return (
     <View style={styles.row}>
-      <Text style={[styles.rowLabel, bold && styles.bold]}>{label}</Text>
-      <Text style={[styles.rowValue, bold && styles.bold]}>{value}</Text>
+      <Text style={[styles.rowLabel, bold && styles.bold, danger && styles.danger]}>{label}</Text>
+      <Text style={[styles.rowValue, bold && styles.bold, danger && styles.danger]}>{value}</Text>
     </View>
   );
 }
@@ -162,4 +175,12 @@ const styles = StyleSheet.create({
   btnPrimaryText: { color: colors.surface, fontSize: 16, fontWeight: 'bold' },
   btnLink: { alignItems: 'center', padding: 12 },
   btnLinkText: { color: colors.textSecondary, fontSize: 14, textDecorationLine: 'underline' },
+
+  danger: { color: colors.danger, fontWeight: '600' },
+  multaAviso: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    backgroundColor: '#FFF0F0', borderRadius: 10, padding: 12,
+    borderWidth: 1, borderColor: '#FFCCCC', marginBottom: 12,
+  },
+  multaAvisoText: { flex: 1, fontSize: 13, color: colors.danger, lineHeight: 18 },
 });

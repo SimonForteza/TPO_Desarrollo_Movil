@@ -99,10 +99,12 @@ export default function FacturaCompra({ navigation, route }) {
         <Row label="Total pagado" value={money(factura.total)} bold />
       </View>
 
-      <TouchableOpacity style={styles.btnPrimary} onPress={handleDescargar}>
-        <Ionicons name="download-outline" size={18} color={colors.surface} style={{ marginRight: 8 }} />
-        <Text style={styles.btnPrimaryText}>Descargar factura PDF</Text>
-      </TouchableOpacity>
+      {factura.total != null && (
+        <TouchableOpacity style={styles.btnPrimary} onPress={handleDescargar}>
+          <Ionicons name="download-outline" size={18} color={colors.surface} style={{ marginRight: 8 }} />
+          <Text style={styles.btnPrimaryText}>Descargar factura PDF</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity
         style={styles.btnSecondary}
