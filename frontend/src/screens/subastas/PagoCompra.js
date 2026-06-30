@@ -73,7 +73,7 @@ export default function PagoCompra({ navigation, route }) {
           'El medio de pago elegido no tiene saldo suficiente para pagar esta compra. Se generó una multa del 10% de tu oferta, que deberás pagar antes de volver a participar. Probá con otro medio de pago o agregá uno nuevo.',
           [
             { text: 'Agregar medio de pago', onPress: () => navigation.navigate('AddPaymentMethod') },
-            { text: 'Entendido', style: 'cancel' },
+            { text: 'Entendido', onPress: () => navigation.navigate('MisProductos') },
           ]
         );
       } else {
