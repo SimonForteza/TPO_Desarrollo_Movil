@@ -82,7 +82,8 @@ export default function PagoCompra({ navigation, route }) {
   }
 
   const costoEnvio = retiraPersonalmente ? 0 : (compra?.costoEnvio ?? 0);
-  const total = Number(compra?.montoFinal ?? 0) + Number(compra?.comision ?? 0) + costoEnvio;
+  const multa = Number(compra?.multaPendiente ?? 0);
+  const total = Number(compra?.montoFinal ?? 0) + Number(compra?.comision ?? 0) + costoEnvio + multa;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -140,6 +141,9 @@ export default function PagoCompra({ navigation, route }) {
         />
         {!retiraPersonalmente && (
           <Row label="Seguro" value={conSeguro ? 'Incluido' : 'Sin seguro'} />
+        )}
+        {multa > 0 && (
+          <Row label="Multa por impago (10% oferta)" value={money(multa)} />
         )}
         <View style={styles.divider} />
         <Row label="Total" value={money(total)} bold />

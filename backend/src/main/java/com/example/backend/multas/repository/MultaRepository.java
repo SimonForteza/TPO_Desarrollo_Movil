@@ -21,4 +21,6 @@ public interface MultaRepository extends JpaRepository<Multa, Long> {
     Optional<Multa> findByIdAndUsuarioId(Long id, Long usuarioId);
 
     boolean existsByCompraId(Long compraId);
+
+    Optional<Multa> findByCompraIdAndEstado(Long compraId, String estado);
 }

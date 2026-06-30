@@ -11,6 +11,8 @@ import com.example.backend.legacy.entity.ItemCatalogo;
 import com.example.backend.legacy.entity.Subasta;
 import com.example.backend.mediosdepago.entity.MedioDePago;
 import com.example.backend.mediosdepago.repository.MedioDePagoRepository;
+import com.example.backend.multas.entity.Multa;
+import com.example.backend.multas.repository.MultaRepository;
 import com.example.backend.multas.service.MultaService;
 import com.example.backend.saldo.SaldoService;
 import com.example.backend.shared.dto.PagedResponse;
@@ -40,17 +42,20 @@ public class CompraService {
     private final MedioDePagoRepository medioDePagoRepository;
     private final SaldoService saldoService;
     private final MultaService multaService;
+    private final MultaRepository multaRepository;
 
     public CompraService(CompraRepository compraRepository,
                          ItemCatalogoRepository itemCatalogoRepository,
                          MedioDePagoRepository medioDePagoRepository,
                          SaldoService saldoService,
-                         MultaService multaService) {
+                         MultaService multaService,
+                         MultaRepository multaRepository) {
         this.compraRepository = compraRepository;
         this.itemCatalogoRepository = itemCatalogoRepository;
         this.medioDePagoRepository = medioDePagoRepository;
         this.saldoService = saldoService;
         this.multaService = multaService;
+        this.multaRepository = multaRepository;
     }
 
     /**
@@ -77,8 +82,15 @@ public class CompraService {
             throw new BusinessRuleException("Payment method currency does not match auction currency");
         }
 
+        // Si existe una multa pendiente asociada a esta compra, se cobra junto con el pago.
+        Multa multaPendiente = multaRepository
+                .findByCompraIdAndEstado(compra.getId(), "pendiente")
+                .orElse(null);
+        BigDecimal importeMulta = multaPendiente != null
+                ? multaPendiente.getImporte() : BigDecimal.ZERO;
+
         BigDecimal costoEnvio = req.retiraPersonalmente() ? BigDecimal.ZERO : COSTO_ENVIO_MOCK;
-        BigDecimal total = compra.getMontoFinal().add(compra.getComision()).add(costoEnvio);
+        BigDecimal total = compra.getMontoFinal().add(compra.getComision()).add(costoEnvio).add(importeMulta);
 
         if (!saldoService.alcanza(usuario.getId(), req.medioPagoId(), total)) {
             // Sin fondos: se genera la multa en su propia transacción y se aborta el pago.
@@ -88,6 +100,10 @@ public class CompraService {
         }
 
         saldoService.debitar(usuario.getId(), req.medioPagoId(), total);
+        if (multaPendiente != null) {
+            multaPendiente.setEstado("pagada");
+            multaRepository.save(multaPendiente);
+        }
         compra.setCostoEnvio(costoEnvio);
         compra.setRetiraPersonalmente(req.retiraPersonalmente());
         compra.setConSeguroEnvio(!req.retiraPersonalmente() && req.conSeguroEnvio());
@@ -113,6 +129,10 @@ public class CompraService {
 
     public CompraDetail detail(Usuario usuario, Long id) {
         Compra compra = findOwned(usuario, id);
+        BigDecimal multaPendiente = multaRepository
+                .findByCompraIdAndEstado(compra.getId(), "pendiente")
+                .map(Multa::getImporte)
+                .orElse(null);
         return new CompraDetail(
                 compra.getId(),
                 compra.getItemId(),
@@ -124,7 +144,8 @@ public class CompraService {
                 compra.isRetiraPersonalmente(),
                 total(compra),
                 compra.getEstado(),
-                compra.getCreadaEn());
+                compra.getCreadaEn(),
+                multaPendiente);
     }
 
     public FacturaResponse factura(Usuario usuario, Long id, String formato) {

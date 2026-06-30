@@ -14,5 +14,6 @@ public record CompraDetail(
         boolean retiraPersonalmente,
         BigDecimal total,
         String estado,
-        LocalDateTime fecha
+        LocalDateTime fecha,
+        BigDecimal multaPendiente
 ) {}
