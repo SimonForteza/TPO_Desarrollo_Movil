@@ -11,9 +11,19 @@ export default function FormTarjetaCredito({ navigation }) {
   const [moneda, setMoneda] = useState('ARS');
   const [loading, setLoading] = useState(false);
 
+  const handleVencimientoChange = (text) => {
+    const digits = text.replace(/\D/g, '').slice(0, 4); // solo números, máx 4 (MMAA)
+    setVencimiento(digits.length >= 3 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits);
+  };
+
   const handleGuardar = async () => {
     if (!numeroTarjeta.trim() || !nombreTitular.trim() || !vencimiento.trim() || !cvv.trim()) {
       Alert.alert('Error', 'Por favor, completá todos los datos de la tarjeta.');
+      return;
+    }
+
+    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(vencimiento)) {
+      Alert.alert('Error', 'Ingresá una fecha de vencimiento válida (MM/AA).');
       return;
     }
 
@@ -61,7 +71,7 @@ export default function FormTarjetaCredito({ navigation }) {
           <TextInput style={styles.input} placeholder="Nombre del titular" value={nombreTitular} onChangeText={setNombreTitular} autoCapitalize="words" placeholderTextColor={colors.textSecondary} />
           
           <View style={styles.row}>
-            <TextInput style={[styles.input, { flex: 1, marginRight: 10 }]} placeholder="MM/AA" value={vencimiento} onChangeText={setVencimiento} keyboardType="numeric" maxLength={5} placeholderTextColor={colors.textSecondary} />
+            <TextInput style={[styles.input, { flex: 1, marginRight: 10 }]} placeholder="MM/AA" value={vencimiento} onChangeText={handleVencimientoChange} keyboardType="numeric" maxLength={5} placeholderTextColor={colors.textSecondary} />
             <TextInput style={[styles.input, { flex: 1, marginLeft: 10 }]} placeholder="CVV" value={cvv} onChangeText={setCvv} keyboardType="numeric" maxLength={4} secureTextEntry placeholderTextColor={colors.textSecondary} />
           </View>
         </View>
