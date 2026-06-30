@@ -20,6 +20,8 @@ const TIPO_CONFIG = {
   MULTA_JUDICIAL: { icon: 'hammer',               color: colors.danger },
   BIEN_ACEPTADO:  { icon: 'checkmark-done-circle',color: colors.success },
   BIEN_RECHAZADO: { icon: 'close-circle',         color: colors.danger },
+  BIEN_EN_INSPECCION:   { icon: 'business-outline',  color: colors.warning },
+  BIEN_PROPUESTA_PRECIO:{ icon: 'pricetag-outline',  color: colors.info },
 };
 
 function iconForTipo(tipo) {

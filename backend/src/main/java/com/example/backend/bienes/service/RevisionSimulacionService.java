@@ -1,57 +1,59 @@
 package com.example.backend.bienes.service;
 
-import com.example.backend.bienes.dto.AprobarBienRequest;
-import com.example.backend.bienes.dto.RechazarBienRequest;
+import com.example.backend.bienes.entity.BienEnConsignacion;
+import com.example.backend.bienes.repository.BienRepository;
+import com.example.backend.bienes.util.EstadoBien;
+import com.example.backend.legacy.entity.Producto;
+import com.example.backend.legacy.repository.ProductoRepository;
+import com.example.backend.notificaciones.service.NotificacionService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.util.Random;
 
 @Service
 public class RevisionSimulacionService {
 
-    private static final long[] PRECIOS = {
-        100_000, 150_000, 200_000, 250_000, 300_000,
-        400_000, 500_000, 600_000, 800_000
-    };
+    private static final String SUCURSAL = "Sáenz Peña al 1500";
 
-    private static final String[] MOTIVOS_RECHAZO = {
-        "El bien no cumple los estándares de autenticidad requeridos para subasta.",
-        "El estado de conservación no es apto para ser incluido en catálogo.",
-        "Documentación de origen insuficiente para proceder con la consignación."
-    };
+    private final BienRepository bienRepository;
+    private final ProductoRepository productoRepository;
+    private final NotificacionService notificacionService;
 
-    private static final String UBICACION_MOCK = "Depósito Central — Av. Corrientes 1234, CABA";
-
-    private final AdminBienService adminBienService;
-    private final Random random = new Random();
-
-    public RevisionSimulacionService(AdminBienService adminBienService) {
-        this.adminBienService = adminBienService;
+    public RevisionSimulacionService(BienRepository bienRepository,
+                                     ProductoRepository productoRepository,
+                                     NotificacionService notificacionService) {
+        this.bienRepository = bienRepository;
+        this.productoRepository = productoRepository;
+        this.notificacionService = notificacionService;
     }
 
+    /**
+     * Inspección simulada (sin scheduler): a los 10 s de solicitar el bien se avisa al usuario
+     * que debe acercar el producto a la sucursal para inspeccionarlo. No aprueba ni rechaza
+     * automáticamente: la propuesta de precio se genera después, cuando el bien pasa a
+     * {@code esperando_subasta} (ver {@code BienService.sincronizarPropuestas}).
+     */
     @Async
-    public void simularRevision(Long bienId) {
+    public void simularInspeccion(Long bienId) {
         try {
-            Thread.sleep(15_000);
+            Thread.sleep(10_000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return;
         }
 
-        try {
-            if (random.nextDouble() < 0.90) {
-                BigDecimal precio = BigDecimal.valueOf(PRECIOS[random.nextInt(PRECIOS.length)]);
-                BigDecimal comision = precio.multiply(new BigDecimal("0.10"));
-                adminBienService.aprobar(bienId,
-                        new AprobarBienRequest(precio, comision, UBICACION_MOCK));
-            } else {
-                String motivo = MOTIVOS_RECHAZO[random.nextInt(MOTIVOS_RECHAZO.length)];
-                adminBienService.rechazar(bienId, new RechazarBienRequest(motivo));
-            }
-        } catch (Exception ignored) {
-            // bien ya procesado o no existe
+        BienEnConsignacion bien = bienRepository.findById(bienId).orElse(null);
+        if (bien == null || !EstadoBien.PENDIENTE_REVISION.equals(bien.getEstado())) {
+            return;
         }
+
+        String nombre = productoRepository.findById(bien.getProductoId())
+                .map(Producto::getDescripcionCatalogo)
+                .orElse("tu producto");
+
+        notificacionService.crear(bien.getUsuarioId(), "BIEN_EN_INSPECCION",
+                "Inspección de tu producto",
+                String.format("Queremos inspeccionar \"%s\". Acercalo a nuestra sucursal de %s.",
+                        nombre, SUCURSAL),
+                "BIEN", bien.getId());
     }
 }

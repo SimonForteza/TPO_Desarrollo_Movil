@@ -15,4 +15,5 @@ public interface BienRepository extends JpaRepository<BienEnConsignacion, Long> 
     Page<BienEnConsignacion> findByEstado(String estado, Pageable pageable);
     Page<BienEnConsignacion> findByEstadoAndSubastaIdIsNull(String estado, Pageable pageable);
     List<BienEnConsignacion> findByEstadoAndSubastaIdIsNull(String estado);
+    List<BienEnConsignacion> findByUsuarioIdAndEstadoAndPrecioBasePropuestoIsNull(Long usuarioId, String estado);
 }

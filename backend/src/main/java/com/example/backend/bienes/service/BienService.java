@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,6 +33,14 @@ public class BienService {
             Set.of(EstadoBien.APROBADO, EstadoBien.ESPERANDO_SUBASTA, EstadoBien.ASIGNADO, EstadoBien.VENDIDO);
 
     private static final BigDecimal GASTOS_DEVOLUCION_PCT = new BigDecimal("0.05");
+
+    // Propuesta de precio simulada (mock): se genera cuando el bien pasa a 'esperando_subasta'.
+    private static final long[] PRECIOS = {
+        100_000, 150_000, 200_000, 250_000, 300_000,
+        400_000, 500_000, 600_000, 800_000
+    };
+    private static final String UBICACION_MOCK = "Depósito Central — Av. Corrientes 1234, CABA";
+    private final Random random = new Random();
 
     private final BienRepository bienRepository;
     private final ClienteRepository clienteRepository;
@@ -65,6 +74,7 @@ public class BienService {
 
     @Transactional(readOnly = true)
     public PagedResponse<BienListItem> list(Usuario usuario, Pageable pageable) {
+        sincronizarPropuestas(usuario.getId());
         Page<BienEnConsignacion> page = bienRepository.findByUsuarioId(usuario.getId(), pageable);
         List<BienListItem> content = page.getContent().stream()
                 .map(bienMapper::toListItem)
@@ -122,16 +132,44 @@ public class BienService {
         bien.setDeclaracionPropiedad(true);
         bien.setOrigenLicitoAcreditado(true);
         bienRepository.save(bien);
-        revisionSimulacionService.simularRevision(bien.getId());
+        revisionSimulacionService.simularInspeccion(bien.getId());
 
         return bienMapper.toDetail(bien);
     }
 
     @Transactional(readOnly = true)
     public BienDetail detail(Usuario usuario, Long id) {
+        sincronizarPropuestas(usuario.getId());
         BienEnConsignacion bien = bienRepository.findByIdAndUsuarioId(id, usuario.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Consignment not found: " + id));
         return bienMapper.toDetail(bien);
+    }
+
+    /**
+     * Barrido lazy (no hay scheduler): cuando el usuario pone manualmente un bien en
+     * {@code esperando_subasta} y todavía no tiene propuesta, se simula la propuesta de precio
+     * (precio base + comisión), se notifica y el bien pasa a {@code aprobado} para que el usuario
+     * acepte o rechace las condiciones. Idempotente: el guard {@code precioBasePropuesto == null}
+     * hace que se dispare una sola vez.
+     */
+    public void sincronizarPropuestas(Long usuarioId) {
+        for (BienEnConsignacion bien : bienRepository
+                .findByUsuarioIdAndEstadoAndPrecioBasePropuestoIsNull(usuarioId, EstadoBien.ESPERANDO_SUBASTA)) {
+            BigDecimal precio = BigDecimal.valueOf(PRECIOS[random.nextInt(PRECIOS.length)]);
+            BigDecimal comision = precio.multiply(new BigDecimal("0.10"));
+            bien.setPrecioBasePropuesto(precio);
+            bien.setComisionPropuesta(comision);
+            bien.setUbicacionDeposito(UBICACION_MOCK);
+            bien.setEstado(EstadoBien.APROBADO);
+            bienRepository.save(bien);
+
+            String nombre = nombreProducto(bien.getProductoId());
+            notificacionService.crear(bien.getUsuarioId(), "BIEN_PROPUESTA_PRECIO",
+                    "Propuesta de precio",
+                    String.format("Se envió una propuesta de precio para tu producto \"%s\": base $%s, comisión $%s. Revisala en Mis Productos para aceptar o rechazar.",
+                            nombre, precio.toPlainString(), comision.toPlainString()),
+                    "BIEN", bien.getId());
+        }
     }
 
     public BienDetail aceptarCondiciones(Usuario usuario, Long id) {

@@ -1,5 +1,6 @@
 import { registerRootComponent } from 'expo';
 
+import './src/utils/webAlert'; // hace funcionar Alert.alert en Expo Web (no-op en react-native-web)
 import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
