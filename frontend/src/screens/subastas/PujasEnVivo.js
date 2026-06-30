@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getInscripcion, getPujas, getRemate, realizarPuja } from '../../api/subastas';
+import { getCatalogoSubasta, getInscripcion, getPujas, getRemate, realizarPuja } from '../../api/subastas';
 import { subscribeRemate } from '../../api/remateSocket';
 import { colors } from '../../theme/colors';
 
@@ -52,6 +53,7 @@ export default function PujasEnVivo({ route, navigation }) {
   const [seg, setSeg] = useState(0);
   const [isInscripto, setIsInscripto] = useState(null);
   const [wsConnected, setWsConnected] = useState(false);
+  const [fotosPorItem, setFotosPorItem] = useState({});
 
   const pollingRef = useRef(null);
   const tickRef = useRef(null);
@@ -61,6 +63,18 @@ export default function PujasEnVivo({ route, navigation }) {
     getInscripcion(subastaId)
       .then(setIsInscripto)
       .catch(() => setIsInscripto(true)); // si falla el check, el backend valida igual
+  }, [subastaId]);
+
+  // Imagen principal (primera foto) de cada lote: el catálogo ya la trae, la cargamos una sola vez
+  // para no inflar el polling/broadcast del remate con base64.
+  useEffect(() => {
+    getCatalogoSubasta(subastaId)
+      .then((items) => {
+        const map = {};
+        (items || []).forEach((c) => { map[c.id] = c.producto?.primeraFotoBase64 || null; });
+        setFotosPorItem(map);
+      })
+      .catch(() => {});
   }, [subastaId]);
 
   // Polling del estado autoritativo del remate (lote actual + reloj + ventas).
@@ -289,9 +303,22 @@ export default function PujasEnVivo({ route, navigation }) {
                   </Text>
                 </View>
               </View>
-              <Text style={styles.itemNombre} numberOfLines={2}>
-                {loteActual.descripcion || 'Lote sin descripción'}
-              </Text>
+              <View style={styles.loteInfoRow}>
+                {fotosPorItem[loteActual.itemId] ? (
+                  <Image
+                    source={{ uri: `data:image/jpeg;base64,${fotosPorItem[loteActual.itemId]}` }}
+                    style={styles.loteThumb}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={[styles.loteThumb, styles.loteThumbPlaceholder]}>
+                    <Ionicons name="image-outline" size={22} color={colors.textSecondary} />
+                  </View>
+                )}
+                <Text style={[styles.itemNombre, styles.itemNombreRow]} numberOfLines={2}>
+                  {loteActual.descripcion || 'Lote sin descripción'}
+                </Text>
+              </View>
               <View style={styles.pricesRow}>
                 <View style={styles.priceBlock}>
                   <Text style={styles.priceLabel}>Base</Text>
@@ -480,6 +507,10 @@ const styles = StyleSheet.create({
   loteActualLabel: { fontSize: 12, fontWeight: '700', color: colors.primary, textTransform: 'uppercase', letterSpacing: 0.5 },
   liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   itemNombre: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, marginBottom: 12 },
+  loteInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  itemNombreRow: { flex: 1, marginBottom: 0 },
+  loteThumb: { width: 64, height: 64, borderRadius: 10, backgroundColor: colors.background },
+  loteThumbPlaceholder: { alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E8EEF5' },
   liderText: { fontSize: 11, color: colors.success, marginTop: 2, fontWeight: '600' },
   pricesRow: { flexDirection: 'row', alignItems: 'center' },
   priceBlock: { flex: 1, alignItems: 'center' },
