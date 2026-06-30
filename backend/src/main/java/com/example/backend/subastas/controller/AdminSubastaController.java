@@ -24,8 +24,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Endpoints administrativos de subastas, pensados para Swagger/Postman.
@@ -71,9 +73,28 @@ public class AdminSubastaController {
             throw new IllegalArgumentException("Invalid moneda. Valid values: " + MONEDAS_VALIDAS);
         }
 
-        List<BienEnConsignacion> bienes = bienRepository.findByEstadoAndSubastaIdIsNull("aprobado");
-        if (bienes.isEmpty()) {
+        List<BienEnConsignacion> disponibles = bienRepository.findByEstadoAndSubastaIdIsNull("aprobado");
+        if (disponibles.isEmpty()) {
             throw new BusinessRuleException("No hay bienes aprobados disponibles para crear una subasta");
+        }
+
+        // Si se especifican bienIds, se usan solo esos (validando que estén disponibles);
+        // si no, se incluyen todos los bienes aprobados disponibles.
+        List<BienEnConsignacion> bienes;
+        if (req.bienIds() != null && !req.bienIds().isEmpty()) {
+            Set<Long> idsPedidos = new HashSet<>(req.bienIds());
+            Set<Long> idsDisponibles = disponibles.stream()
+                    .map(BienEnConsignacion::getId).collect(Collectors.toSet());
+            List<Long> invalidos = idsPedidos.stream()
+                    .filter(id -> !idsDisponibles.contains(id)).sorted().toList();
+            if (!invalidos.isEmpty()) {
+                throw new BusinessRuleException(
+                        "Estos bienes no están disponibles (no existen, no aprobados o ya asignados): " + invalidos);
+            }
+            bienes = disponibles.stream()
+                    .filter(b -> idsPedidos.contains(b.getId())).toList();
+        } else {
+            bienes = disponibles;
         }
 
         Subastador subastador;
