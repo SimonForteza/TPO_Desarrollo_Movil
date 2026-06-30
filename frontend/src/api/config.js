@@ -1,5 +1,5 @@
 // Cambiá USE_REMOTE a false para desarrollar contra el backend local.
-const USE_REMOTE = false;
+const USE_REMOTE = true;
 
 // Backend deployado en Railway (Supabase vía Session pooler).
 const REMOTE_URL = 'https://tpodesarrollomovil-production.up.railway.app';
