@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import {
-  Platform,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNavBar from '../../components/BottomNavBar';
 import { colors } from '../../theme/colors';
 
@@ -18,7 +17,7 @@ const BULLETS = [
 
 export default function SolicitarSubastaInfo({ navigation }) {
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         <Text style={styles.title}>Solicitar Subasta</Text>
 
@@ -57,7 +56,7 @@ export default function SolicitarSubastaInfo({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? 35 : 0 },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1 },
   title: { fontSize: 24, fontWeight: 'bold', color: colors.textPrimary, paddingHorizontal: 20, paddingTop: 10 },
 

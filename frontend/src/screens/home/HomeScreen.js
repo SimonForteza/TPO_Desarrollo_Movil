@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../api/axiosConfig';
 import { getSubastas } from '../../api/subastas';
 import { getNotificaciones } from '../../api/notificaciones';
@@ -121,7 +122,7 @@ export default function HomeScreen({ navigation, route }) {
   const categoriaUsuario = usuario?.categoria;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.headerTextContainer}>
@@ -279,7 +280,7 @@ function SubastaCard({ item, navigation, live }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? 35 : 0 },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1 },
 
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 15 },

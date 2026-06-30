@@ -4,14 +4,13 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getSubastaDetalle, getCatalogoSubasta, unirseASubasta } from '../../api/subastas';
 import { getMediosPago, elegirMedioParaSubasta } from '../../api/mediosPago';
 import { requireLogin, getUserData } from '../../api/session';
@@ -35,6 +34,7 @@ function iniciales(nombre) {
 }
 
 export default function DetalleSubasta({ route, navigation }) {
+  const insets = useSafeAreaInsets();
   const { id } = route.params || {};
   const [subasta, setSubasta] = useState(null);
   const [catalogo, setCatalogo] = useState([]);
@@ -110,7 +110,7 @@ export default function DetalleSubasta({ route, navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 60 }} />
       </SafeAreaView>
     );
@@ -118,7 +118,7 @@ export default function DetalleSubasta({ route, navigation }) {
 
   if (!subasta) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <Header navigation={navigation} />
         <Text style={styles.errorText}>No se encontró la subasta.</Text>
       </SafeAreaView>
@@ -128,7 +128,7 @@ export default function DetalleSubasta({ route, navigation }) {
   const sub = subasta.subastador;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <Header navigation={navigation} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Placeholder de streaming */}
@@ -227,7 +227,7 @@ export default function DetalleSubasta({ route, navigation }) {
         ) : null}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity
           style={[styles.unirseBtn, uniendo && styles.unirseBtnDisabled]}
           onPress={handleUnirse}
@@ -277,7 +277,7 @@ function InfoRow({ label, value }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? 35 : 0 },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20, paddingBottom: 20 },
   errorText: { textAlign: 'center', marginTop: 40, color: colors.textSecondary },
 

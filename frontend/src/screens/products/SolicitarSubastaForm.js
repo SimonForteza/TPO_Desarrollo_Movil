@@ -5,7 +5,6 @@ import {
   Alert,
   Image,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { crearBien } from '../../api/bienes';
 import { listarCuentas } from '../../api/cuentasCobro';
@@ -107,7 +107,7 @@ export default function SolicitarSubastaForm({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.label}>Nombre Producto</Text>
         <TextInput

@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { Alert, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { clearTokens, clearUserData, getUserData } from '../../api/session';
 import { getParticipaciones, getLimiteDisponible, getCategoria } from '../../api/me';
 import { colors } from '../../theme/colors';
@@ -45,7 +46,7 @@ export default function ProfileScreen({ navigation }) {
   // Vista invitado
   if (!user) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Mi Perfil</Text>
         </View>
@@ -198,7 +199,7 @@ export default function ProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? 35 : 0 },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   header: { alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: colors.textPrimary },
   scroll: { paddingBottom: 100 },

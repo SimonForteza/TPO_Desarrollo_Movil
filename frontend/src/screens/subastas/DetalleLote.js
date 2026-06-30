@@ -5,14 +5,13 @@ import {
   Alert,
   Dimensions,
   Image,
-  Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getItemCatalogo } from '../../api/subastas';
 import { colors } from '../../theme/colors';
 
@@ -25,6 +24,7 @@ function formatMoneda(valor) {
 }
 
 export default function DetalleLote({ route, navigation }) {
+  const insets = useSafeAreaInsets();
   const { subastaId, itemId, moneda, categoria, medioPagoId } = route.params || {};
 
   const [item, setItem] = useState(null);
@@ -49,7 +49,7 @@ export default function DetalleLote({ route, navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <Header navigation={navigation} />
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 60 }} />
       </SafeAreaView>
@@ -58,7 +58,7 @@ export default function DetalleLote({ route, navigation }) {
 
   if (!item) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <Header navigation={navigation} />
         <Text style={styles.errorText}>No se encontró el lote.</Text>
       </SafeAreaView>
@@ -69,7 +69,7 @@ export default function DetalleLote({ route, navigation }) {
   const vendido = item.subastado === 'si';
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <Header navigation={navigation} />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
@@ -145,7 +145,7 @@ export default function DetalleLote({ route, navigation }) {
       </ScrollView>
 
       {!vendido && (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
           <TouchableOpacity style={styles.salaBtn} onPress={irASala}>
             <Ionicons name="hammer-outline" size={18} color={colors.surface} />
             <Text style={styles.salaBtnText}>Ir a sala de pujas</Text>
@@ -168,7 +168,7 @@ function Header({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? 35 : 0 },
+  safe: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
   backBtn: { padding: 4 },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: colors.textPrimary },

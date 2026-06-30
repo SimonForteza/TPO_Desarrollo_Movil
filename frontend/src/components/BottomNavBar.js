@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { requireLogin } from '../api/session';
 import { colors } from '../theme/colors';
 
 // active: 'subastas' | 'productos' | 'perfil'
 export default function BottomNavBar({ navigation, active }) {
+  const insets = useSafeAreaInsets();
   const tabs = [
     {
       key: 'subastas',
@@ -27,7 +29,7 @@ export default function BottomNavBar({ navigation, active }) {
   ];
 
   return (
-    <View style={styles.bottomBar}>
+    <View style={[styles.bottomBar, { height: 65 + insets.bottom, paddingBottom: 8 + insets.bottom }]}>
       {tabs.map((tab) => {
         const isActive = tab.key === active;
         return (

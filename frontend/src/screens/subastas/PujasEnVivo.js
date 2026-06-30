@@ -3,8 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getInscripcion, getPujas, getRemate, realizarPuja } from '../../api/subastas';
 import { subscribeRemate } from '../../api/remateSocket';
 import { colors } from '../../theme/colors';
@@ -35,6 +34,7 @@ function colorTimer(seg) {
 }
 
 export default function PujasEnVivo({ route, navigation }) {
+  const insets = useSafeAreaInsets();
   const { subastaId, medioPagoId, moneda, categoria } = route.params || {};
   const sinLimites = categoria === 'oro' || categoria === 'platino';
 
@@ -204,7 +204,7 @@ export default function PujasEnVivo({ route, navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <Header navigation={navigation} subastaId={subastaId} />
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 60 }} />
       </SafeAreaView>
@@ -212,7 +212,7 @@ export default function PujasEnVivo({ route, navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <Header
         navigation={navigation}
         subastaId={subastaId}
@@ -336,7 +336,7 @@ export default function PujasEnVivo({ route, navigation }) {
             )}
           </ScrollView>
 
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
             {isInscripto === false ? (
               <View style={styles.noInscriptoRow}>
                 <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
@@ -430,7 +430,7 @@ function Header({ navigation, subastaId, seg, mostrarTimer }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? 35 : 0 },
+  safeArea: { flex: 1, backgroundColor: colors.background },
 
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
   backBtn: { padding: 4 },

@@ -5,14 +5,13 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getCompras } from '../../api/compras';
 import BottomNavBar from '../../components/BottomNavBar';
 import { colors } from '../../theme/colors';
@@ -80,7 +79,7 @@ export default function MisCompras({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Mis Compras</Text>
@@ -169,7 +168,7 @@ function CompraCard({ compra, onPress }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? 35 : 0 },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1 },
 
   header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 12 },

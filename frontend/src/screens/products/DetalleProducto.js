@@ -6,14 +6,13 @@ import {
   Alert,
   Dimensions,
   Image,
-  Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { aceptarCondiciones, getBienDetalle, rechazarCondiciones } from '../../api/bienes';
 import { colors } from '../../theme/colors';
 
@@ -99,7 +98,7 @@ export default function DetalleProducto({ route, navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <Header navigation={navigation} title="Detalle" />
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 60 }} />
       </SafeAreaView>
@@ -108,7 +107,7 @@ export default function DetalleProducto({ route, navigation }) {
 
   if (!bien) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <Header navigation={navigation} title="Detalle" />
         <Text style={styles.errorText}>No se encontró el producto.</Text>
       </SafeAreaView>
@@ -121,7 +120,7 @@ export default function DetalleProducto({ route, navigation }) {
   const comision = formatMoneda(bien.comisionPropuesta);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <Header navigation={navigation} title={bien.descripcionCatalogo || 'Producto'} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
@@ -306,7 +305,7 @@ function Row({ label, value }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? 35 : 0 },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   content: { paddingBottom: 40 },
   errorText: { textAlign: 'center', marginTop: 40, color: colors.textSecondary },
 
