@@ -183,14 +183,6 @@ export default function PujasEnVivo({ route, navigation }) {
     try {
       await realizarPuja(subastaId, { itemId: loteActualId, importe: monto, medioPagoId });
       setImporte('');
-      // Refrescamos al toque para ver el reloj reiniciado y la oferta líder.
-      const [estado, pujas] = await Promise.all([
-        getRemate(subastaId),
-        getPujas(subastaId).catch(() => historial),
-      ]);
-      setRemate(estado);
-      setHistorial(pujas);
-      setSeg(estado.segundosRestantes ?? 0);
     } catch (error) {
       const status = error.response?.status;
       const msg = error.response?.data?.message || '';
@@ -205,6 +197,21 @@ export default function PujasEnVivo({ route, navigation }) {
       } else {
         Alert.alert('No se pudo pujar', msg || 'Intentá de nuevo.');
       }
+      setPujando(false);
+      return;
+    }
+    // Refresh después de puja exitosa — errores aquí no deben mostrarse al usuario
+    // (el polling de 2 s los recupera automáticamente).
+    try {
+      const [estado, pujas] = await Promise.all([
+        getRemate(subastaId),
+        getPujas(subastaId).catch(() => historial),
+      ]);
+      setRemate(estado);
+      setHistorial(pujas);
+      setSeg(estado.segundosRestantes ?? 0);
+    } catch (_) {
+      // silenciar: el polling periódico actualizará el estado
     } finally {
       setPujando(false);
     }
