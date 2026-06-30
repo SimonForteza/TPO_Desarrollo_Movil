@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../api/axiosConfig';
+import { getCategoria } from '../../api/me';
 import { getSubastas } from '../../api/subastas';
 import { getNotificaciones } from '../../api/notificaciones';
 import { clearPendingRegistration, getPendingRegistration, getUserData, setUserData } from '../../api/session';
@@ -33,8 +35,19 @@ export default function HomeScreen({ navigation, route }) {
   const [busqueda, setBusqueda] = useState('');
   const [subastas, setSubastas] = useState([]);
   const [loadingSubastas, setLoadingSubastas] = useState(true);
+  const [categoriaFresca, setCategoriaFresca] = useState(null);
 
   const intervalRef = useRef(null);
+
+  // La categoría se persiste en backend al subir de nivel; el user de sesión queda viejo.
+  // Traemos la categoría fresca (igual que ProfileScreen) y refrescamos en cada focus.
+  useFocusEffect(
+    useCallback(() => {
+      getCategoria()
+        .then((info) => setCategoriaFresca(info?.actual ?? null))
+        .catch(() => {});
+    }, [])
+  );
 
   // Cargar datos del usuario si no están en memoria (ej: reinicio de la app)
   useEffect(() => {
@@ -119,7 +132,7 @@ export default function HomeScreen({ navigation, route }) {
     (mostrarEnVivo ? enVivo.length : 0) + (mostrarProximas ? proximas.length : 0);
 
   const nombreUsuario = usuario?.nombre || 'Invitado';
-  const categoriaUsuario = usuario?.categoria;
+  const categoriaUsuario = categoriaFresca ?? usuario?.categoria;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
