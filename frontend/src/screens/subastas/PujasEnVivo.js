@@ -33,6 +33,12 @@ function colorTimer(seg) {
   return colors.success;
 }
 
+// Nombre del postor con fallback al número de postor (ambos pueden venir del backend).
+function nombrePostor(nombre, numero) {
+  if (nombre) return nombre;
+  return numero != null ? `Postor #${numero}` : 'Postor';
+}
+
 export default function PujasEnVivo({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { subastaId, medioPagoId, moneda, categoria } = route.params || {};
@@ -132,7 +138,9 @@ export default function PujasEnVivo({ route, navigation }) {
       Alert.alert(
         '¡Martillo!',
         `Lote ${lote.numeroLote} vendido a ${formatMoneda(lote.montoActual)}${
-          lote.numeroPostorLider ? ` — Postor #${lote.numeroPostorLider}` : ''
+          lote.nombrePostorLider || lote.numeroPostorLider != null
+            ? ` — ${nombrePostor(lote.nombrePostorLider, lote.numeroPostorLider)}`
+            : ''
         }.`
       );
     } else if (lote.estado === 'sin_ofertas') {
@@ -288,8 +296,10 @@ export default function PujasEnVivo({ route, navigation }) {
                   <Text style={[styles.priceValue, loteActual.montoActual != null && { color: colors.success }]}>
                     {loteActual.montoActual != null ? formatMoneda(loteActual.montoActual) : 'Sin ofertas'}
                   </Text>
-                  {loteActual.numeroPostorLider != null && (
-                    <Text style={styles.liderText}>Postor #{loteActual.numeroPostorLider}</Text>
+                  {(loteActual.nombrePostorLider || loteActual.numeroPostorLider != null) && (
+                    <Text style={styles.liderText}>
+                      {nombrePostor(loteActual.nombrePostorLider, loteActual.numeroPostorLider)}
+                    </Text>
                   )}
                 </View>
               </View>
@@ -325,7 +335,7 @@ export default function PujasEnVivo({ route, navigation }) {
                       <Ionicons name="trophy-outline" size={14} color={colors.success} style={{ marginRight: 6 }} />
                     )}
                     <Text style={[styles.pujaPostor, idx === 0 && styles.pujaPostorTop]}>
-                      Postor #{p.numeroPostor}
+                      {nombrePostor(p.nombrePostor, p.numeroPostor)}
                     </Text>
                   </View>
                   <Text style={[styles.pujaImporte, idx === 0 && styles.pujaImporteTop]}>

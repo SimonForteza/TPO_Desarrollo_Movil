@@ -1,5 +1,6 @@
 package com.example.backend.subastas.service;
 
+import com.example.backend.legacy.entity.Asistente;
 import com.example.backend.legacy.entity.ItemCatalogo;
 import com.example.backend.legacy.entity.Producto;
 import com.example.backend.legacy.entity.Pujo;
@@ -178,7 +179,7 @@ public class RemateService {
                     if ("si".equals(item.getSubastado())) {
                         if (pujos.isEmpty()) {
                             return new RemateLote(item.getIdentificador(), numeroLote, descripcion,
-                                    item.getPrecioBase(), "sin_ofertas", item.getPrecioBase(), null);
+                                    item.getPrecioBase(), "sin_ofertas", item.getPrecioBase(), null, null);
                         }
                         Pujo ganadora = pujos.stream()
                                 .filter(p -> "si".equals(p.getGanador()))
@@ -186,24 +187,33 @@ public class RemateService {
                                 .orElseGet(() -> mejorPuja(pujos));
                         return new RemateLote(item.getIdentificador(), numeroLote, descripcion,
                                 item.getPrecioBase(), "vendido", ganadora.getImporte(),
-                                ganadora.getAsistente().getNumeroPostor());
+                                ganadora.getAsistente().getNumeroPostor(),
+                                nombrePostor(ganadora.getAsistente()));
                     }
 
                     if (item.getIdentificador().equals(loteActualId)) {
                         Pujo best = mejorPuja(pujos);
                         BigDecimal monto = best != null ? best.getImporte() : null;
                         Integer lider = best != null ? best.getAsistente().getNumeroPostor() : null;
+                        String nombreLider = best != null ? nombrePostor(best.getAsistente()) : null;
                         return new RemateLote(item.getIdentificador(), numeroLote, descripcion,
-                                item.getPrecioBase(), "en_remate", monto, lider);
+                                item.getPrecioBase(), "en_remate", monto, lider, nombreLider);
                     }
 
                     return new RemateLote(item.getIdentificador(), numeroLote, descripcion,
-                            item.getPrecioBase(), "pendiente", null, null);
+                            item.getPrecioBase(), "pendiente", null, null, null);
                 })
                 .toList();
     }
 
     private Pujo mejorPuja(List<Pujo> pujos) {
         return pujos.stream().max(Comparator.comparing(Pujo::getImporte)).orElse(null);
+    }
+
+    /** Nombre del postor (Asistente → Cliente → Persona), o null si falta algún eslabón. */
+    private static String nombrePostor(Asistente a) {
+        if (a == null || a.getCliente() == null || a.getCliente().getPersona() == null) return null;
+        String n = a.getCliente().getPersona().getNombre();
+        return (n != null && !n.isBlank()) ? n : null;
     }
 }

@@ -226,10 +226,18 @@ public class PujaService {
                         p.getItem().getIdentificador(),
                         p.getItem().getProducto().getDescripcionCatalogo(),
                         p.getAsistente().getIdentificador(),
-                        p.getAsistente().getNumeroPostor()))
+                        p.getAsistente().getNumeroPostor(),
+                        nombrePostor(p.getAsistente())))
                 .collect(Collectors.toList());
 
         return new PagedResponse<>(content, page.getNumber(), page.getSize(),
                 page.getTotalElements(), page.getTotalPages());
+    }
+
+    /** Nombre del postor (Asistente → Cliente → Persona), o null si falta algún eslabón. */
+    private static String nombrePostor(Asistente a) {
+        if (a == null || a.getCliente() == null || a.getCliente().getPersona() == null) return null;
+        String n = a.getCliente().getPersona().getNombre();
+        return (n != null && !n.isBlank()) ? n : null;
     }
 }
