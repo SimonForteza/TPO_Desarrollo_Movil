@@ -12,7 +12,7 @@ import java.math.BigDecimal;
  *  - "sin_ofertas"→ martillado sin pujas, adjudicado a la casa al precio base
  *
  * Para "en_remate", {@code montoActual} es la mejor oferta vigente (o null si nadie pujó aún)
- * y {@code numeroPostorLider} el postor que va ganando.
+ * y {@code numeroPostorLider} el postor que va ganando ({@code nombrePostorLider} su nombre).
  */
 public record RemateLote(
         Integer itemId,
@@ -21,5 +21,6 @@ public record RemateLote(
         BigDecimal precioBase,
         String estado,
         BigDecimal montoActual,
-        Integer numeroPostorLider
+        Integer numeroPostorLider,
+        String nombrePostorLider
 ) {}

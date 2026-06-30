@@ -9,5 +9,6 @@ public record PujaHistoryItem(
         Integer itemId,
         String productoDescripcion,
         Integer asistenteId,
-        Integer numeroPostor
+        Integer numeroPostor,
+        String nombrePostor
 ) {}
