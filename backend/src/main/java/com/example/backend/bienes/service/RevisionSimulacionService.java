@@ -41,7 +41,7 @@ public class RevisionSimulacionService {
         }
 
         try {
-            if (random.nextDouble() < 0.70) {
+            if (random.nextDouble() < 0.90) {
                 BigDecimal precio = BigDecimal.valueOf(PRECIOS[random.nextInt(PRECIOS.length)]);
                 BigDecimal comision = precio.multiply(new BigDecimal("0.10"));
                 adminBienService.aprobar(bienId,
