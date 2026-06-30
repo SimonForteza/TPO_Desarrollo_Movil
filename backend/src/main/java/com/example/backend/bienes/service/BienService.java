@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class BienService {
 
     private static final Set<String> ESTADOS_CON_UBICACION =
-            Set.of(EstadoBien.APROBADO, EstadoBien.ASIGNADO, EstadoBien.VENDIDO);
+            Set.of(EstadoBien.APROBADO, EstadoBien.ESPERANDO_SUBASTA, EstadoBien.ASIGNADO, EstadoBien.VENDIDO);
 
     private static final BigDecimal GASTOS_DEVOLUCION_PCT = new BigDecimal("0.05");
 
@@ -136,13 +136,13 @@ public class BienService {
 
     public BienDetail aceptarCondiciones(Usuario usuario, Long id) {
         BienEnConsignacion bien = findAprobadoConCondiciones(usuario.getId(), id);
-        bien.setEstado(EstadoBien.ASIGNADO);
+        bien.setEstado(EstadoBien.ESPERANDO_SUBASTA);
         bienRepository.save(bien);
 
         String nombre = nombreProducto(bien.getProductoId());
         notificacionService.crear(bien.getUsuarioId(), "BIEN_CONDICIONES_ACEPTADAS",
                 "Condiciones aceptadas",
-                String.format("Aceptaste las condiciones para \"%s\". Tu bien quedará asignado a una subasta.", nombre),
+                String.format("Aceptaste las condiciones para \"%s\". Tu bien queda a la espera de ser incluido en una subasta.", nombre),
                 "BIEN", bien.getId());
 
         return bienMapper.toDetail(bien);

@@ -34,7 +34,7 @@ public class RevisionSimulacionService {
     @Async
     public void simularRevision(Long bienId) {
         try {
-            Thread.sleep(60_000);
+            Thread.sleep(15_000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return;

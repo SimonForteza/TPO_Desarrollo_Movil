@@ -21,6 +21,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ESTADO_INFO = {
   pendiente_revision: { label: 'En Revisión', color: colors.warning, icon: 'time-outline' },
   aprobado:           { label: 'Aprobado',    color: colors.success, icon: 'checkmark-circle-outline' },
+  esperando_subasta:  { label: 'Esperando subasta', color: colors.warning, icon: 'hourglass-outline' },
   rechazado:          { label: 'Rechazado',   color: colors.danger,  icon: 'close-circle-outline' },
   asignado:           { label: 'En Subasta',  color: colors.info,    icon: 'hammer-outline' },
   vendido:            { label: 'Vendido',     color: colors.info,    icon: 'bag-check-outline' },
@@ -59,7 +60,7 @@ export default function DetalleProducto({ route, navigation }) {
     setActionLoading(true);
     try {
       await aceptarCondiciones(id);
-      Alert.alert('Condiciones aceptadas', 'Tu bien quedará asignado a una subasta.');
+      Alert.alert('Condiciones aceptadas', 'Tu bien queda a la espera de ser incluido en una subasta.');
       cargarDetalle();
     } catch (err) {
       const msg = err?.response?.data?.message ?? 'No se pudieron aceptar las condiciones.';

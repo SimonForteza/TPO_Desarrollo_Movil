@@ -19,6 +19,7 @@ import { colors } from '../../theme/colors';
 const CHIPS = [
   { key: 'todas', label: 'Todas' },
   { key: 'aprobado', label: 'Aprobadas' },
+  { key: 'esperando_subasta', label: 'Esperando subasta' },
   { key: 'pendiente_revision', label: 'Pendientes' },
   { key: 'rechazado', label: 'Rechazadas' },
 ];
@@ -27,6 +28,7 @@ const CHIPS = [
 const ESTADO_INFO = {
   pendiente_revision: { label: 'En Revisión', color: colors.warning },
   aprobado: { label: 'Aprobado', color: colors.success },
+  esperando_subasta: { label: 'Esperando subasta', color: colors.warning },
   rechazado: { label: 'Rechazado', color: colors.danger },
   asignado: { label: 'En Subasta', color: colors.info },
   vendido: { label: 'Vendido', color: colors.info },

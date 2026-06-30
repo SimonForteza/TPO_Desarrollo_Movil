@@ -68,7 +68,7 @@ public class AdminBienService {
     @Transactional(readOnly = true)
     public PagedResponse<BienListItem> listarAprobadosDisponibles(Pageable pageable) {
         Page<BienEnConsignacion> page =
-                bienRepository.findByEstadoAndSubastaIdIsNull(EstadoBien.APROBADO, pageable);
+                bienRepository.findByEstadoAndSubastaIdIsNull(EstadoBien.ESPERANDO_SUBASTA, pageable);
         return toPagedResponse(page);
     }
 
@@ -105,11 +105,9 @@ public class AdminBienService {
         BienEnConsignacion bien = bienRepository.findById(bienId)
                 .orElseThrow(() -> new ResourceNotFoundException("Consignment not found: " + bienId));
 
-        boolean estadoValido = EstadoBien.APROBADO.equals(bien.getEstado())
-                || EstadoBien.ASIGNADO.equals(bien.getEstado());
-        if (!estadoValido) {
+        if (!EstadoBien.ESPERANDO_SUBASTA.equals(bien.getEstado())) {
             throw new BusinessRuleException(
-                    "Consignment must be in 'aprobado' or 'asignado' state (current: " + bien.getEstado() + ")");
+                    "Consignment must be in 'esperando_subasta' state (current: " + bien.getEstado() + ")");
         }
         if (bien.getSubastaId() != null) {
             throw new BusinessRuleException("Already assigned to auction " + bien.getSubastaId());

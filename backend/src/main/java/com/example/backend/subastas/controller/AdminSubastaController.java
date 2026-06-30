@@ -2,6 +2,7 @@ package com.example.backend.subastas.controller;
 
 import com.example.backend.bienes.entity.BienEnConsignacion;
 import com.example.backend.bienes.repository.BienRepository;
+import com.example.backend.bienes.util.EstadoBien;
 import com.example.backend.legacy.entity.*;
 import com.example.backend.shared.dto.ApiResponse;
 import com.example.backend.shared.exception.BusinessRuleException;
@@ -73,13 +74,14 @@ public class AdminSubastaController {
             throw new IllegalArgumentException("Invalid moneda. Valid values: " + MONEDAS_VALIDAS);
         }
 
-        List<BienEnConsignacion> disponibles = bienRepository.findByEstadoAndSubastaIdIsNull("aprobado");
+        List<BienEnConsignacion> disponibles =
+                bienRepository.findByEstadoAndSubastaIdIsNull(EstadoBien.ESPERANDO_SUBASTA);
         if (disponibles.isEmpty()) {
-            throw new BusinessRuleException("No hay bienes aprobados disponibles para crear una subasta");
+            throw new BusinessRuleException("No hay bienes esperando subasta para crear una subasta");
         }
 
         // Si se especifican bienIds, se usan solo esos (validando que estén disponibles);
-        // si no, se incluyen todos los bienes aprobados disponibles.
+        // si no, se incluyen todos los bienes que esperan ser incluidos en una subasta.
         List<BienEnConsignacion> bienes;
         if (req.bienIds() != null && !req.bienIds().isEmpty()) {
             Set<Long> idsPedidos = new HashSet<>(req.bienIds());
@@ -89,7 +91,7 @@ public class AdminSubastaController {
                     .filter(id -> !idsDisponibles.contains(id)).sorted().toList();
             if (!invalidos.isEmpty()) {
                 throw new BusinessRuleException(
-                        "Estos bienes no están disponibles (no existen, no aprobados o ya asignados): " + invalidos);
+                        "Estos bienes no están disponibles (no existen, no aceptados, o ya asignados): " + invalidos);
             }
             bienes = disponibles.stream()
                     .filter(b -> idsPedidos.contains(b.getId())).toList();
@@ -146,7 +148,7 @@ public class AdminSubastaController {
             item.setSubastado("no");
             em.persist(item);
 
-            bien.setEstado("asignado");
+            bien.setEstado(EstadoBien.ASIGNADO);
             bien.setSubastaId(subasta.getIdentificador());
 
             producto.setDisponible("no");
