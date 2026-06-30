@@ -15,5 +15,5 @@ public record CompraDetail(
         BigDecimal total,
         String estado,
         LocalDateTime fecha,
-        BigDecimal multaPendiente
+        BigDecimal multaImporte  // null when no pending fine; included in payment total when present
 ) {}

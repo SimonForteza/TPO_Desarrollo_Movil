@@ -59,10 +59,10 @@ public class CompraService {
     }
 
     /**
-     * Pago diferido (mockeado) de un lote ganado. El ganador elige medio de pago y modalidad
-     * de entrega. Si el saldo del medio no alcanza para el total, en lugar de pagar se genera
-     * una multa (10% de lo ofertado) y se responde 422 (consigna L70). El retiro en persona
-     * anula el costo de envío y la cobertura del seguro (consigna L66).
+     * Pago diferido (mockeado) de un lote ganado. Si existe una multa pendiente asociada
+     * a la compra (estado "impaga"), el total la incluye y ambas se marcan pagadas en la
+     * misma transacción, levantando el bloqueo de inscripción. Si el saldo no alcanza en
+     * un primer intento (estado "pendiente"), se genera la multa y se responde 422.
      */
     @Transactional
     public CompraDetail pagar(Usuario usuario, Long id, PagarCompraRequest req) {
@@ -82,33 +82,35 @@ public class CompraService {
             throw new BusinessRuleException("Payment method currency does not match auction currency");
         }
 
-        // Si existe una multa pendiente asociada a esta compra, se cobra junto con el pago.
+        // If there is a pending fine for this purchase, it must be paid together.
         Multa multaPendiente = multaRepository
                 .findByCompraIdAndEstado(compra.getId(), "pendiente")
                 .orElse(null);
-        BigDecimal importeMulta = multaPendiente != null
-                ? multaPendiente.getImporte() : BigDecimal.ZERO;
+        BigDecimal importeMulta = multaPendiente != null ? multaPendiente.getImporte() : BigDecimal.ZERO;
 
         BigDecimal costoEnvio = req.retiraPersonalmente() ? BigDecimal.ZERO : COSTO_ENVIO_MOCK;
         BigDecimal total = compra.getMontoFinal().add(compra.getComision()).add(costoEnvio).add(importeMulta);
 
         if (!saldoService.alcanza(usuario.getId(), req.medioPagoId(), total)) {
-            // Sin fondos: se genera la multa en su propia transacción y se aborta el pago.
-            multaService.generarPorImpagoTx(compra.getId());
+            if (!"impaga".equals(compra.getEstado())) {
+                // First failed attempt: generate the fine in its own transaction so it persists
+                // even though this transaction will roll back.
+                multaService.generarPorImpagoTx(compra.getId());
+            }
             throw new BusinessRuleException(
-                    "Insufficient funds: a fine (10% of the bid) was generated and must be paid before bidding again");
+                    "Insufficient funds: the total includes the outstanding fine and must be paid in full");
         }
 
         saldoService.debitar(usuario.getId(), req.medioPagoId(), total);
         if (multaPendiente != null) {
-            multaPendiente.setEstado("pagada");
-            multaRepository.save(multaPendiente);
+            multaService.pagarInternal(multaPendiente);
         }
         compra.setCostoEnvio(costoEnvio);
         compra.setRetiraPersonalmente(req.retiraPersonalmente());
         compra.setConSeguroEnvio(!req.retiraPersonalmente() && req.conSeguroEnvio());
         compra.setEstado("pagada");
         compraRepository.save(compra);
+
         return detail(usuario, id);
     }
 
@@ -129,7 +131,7 @@ public class CompraService {
 
     public CompraDetail detail(Usuario usuario, Long id) {
         Compra compra = findOwned(usuario, id);
-        BigDecimal multaPendiente = multaRepository
+        BigDecimal multaImporte = multaRepository
                 .findByCompraIdAndEstado(compra.getId(), "pendiente")
                 .map(Multa::getImporte)
                 .orElse(null);
@@ -145,7 +147,7 @@ public class CompraService {
                 total(compra),
                 compra.getEstado(),
                 compra.getCreadaEn(),
-                multaPendiente);
+                multaImporte);
     }
 
     public FacturaResponse factura(Usuario usuario, Long id, String formato) {

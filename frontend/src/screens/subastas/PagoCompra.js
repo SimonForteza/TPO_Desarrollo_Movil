@@ -96,12 +96,20 @@ export default function PagoCompra({ navigation, route }) {
   }
 
   const costoEnvio = retiraPersonalmente ? 0 : (compra?.costoEnvio ?? 0);
-  const multa = Number(compra?.multaPendiente ?? 0);
-  const total = Number(compra?.montoFinal ?? 0) + Number(compra?.comision ?? 0) + costoEnvio + multa;
+  const multaImporte = Number(compra?.multaImporte ?? 0);
+  const total = Number(compra?.montoFinal ?? 0) + Number(compra?.comision ?? 0) + costoEnvio + multaImporte;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading}>Método de pago</Text>
+
+      {compra?.estado === 'impaga' && (
+        <View style={styles.alertCard}>
+          <Text style={styles.alertText}>
+            Esta compra está impaga. El pago incluye la multa correspondiente (10% del monto pujado).
+          </Text>
+        </View>
+      )}
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Seleccioná un medio</Text>
@@ -156,8 +164,8 @@ export default function PagoCompra({ navigation, route }) {
         {!retiraPersonalmente && (
           <Row label="Seguro" value={conSeguro ? 'Incluido' : 'Sin seguro'} />
         )}
-        {multa > 0 && (
-          <Row label="Multa por impago (10% oferta)" value={money(multa)} />
+        {multaImporte > 0 && (
+          <Row label="Multa por impago (10%)" value={money(multaImporte)} danger />
         )}
         <View style={styles.divider} />
         <Row label="Total" value={money(total)} bold />
@@ -178,11 +186,11 @@ export default function PagoCompra({ navigation, route }) {
   );
 }
 
-function Row({ label, value, bold }) {
+function Row({ label, value, bold, danger }) {
   return (
     <View style={styles.row}>
-      <Text style={[styles.rowLabel, bold && styles.bold]}>{label}</Text>
-      <Text style={[styles.rowValue, bold && styles.bold]}>{value}</Text>
+      <Text style={[styles.rowLabel, bold && styles.bold, danger && styles.dangerText]}>{label}</Text>
+      <Text style={[styles.rowValue, bold && styles.bold, danger && styles.dangerText]}>{value}</Text>
     </View>
   );
 }
@@ -223,6 +231,13 @@ const styles = StyleSheet.create({
   rowValue: { fontSize: 14, color: colors.textPrimary },
   bold: { fontWeight: 'bold', fontSize: 15, color: colors.textPrimary },
   divider: { height: 1, backgroundColor: '#EAEAEA', marginVertical: 10 },
+
+  alertCard: {
+    backgroundColor: '#FFF3CD', borderRadius: 12, padding: 14,
+    marginBottom: 16, borderWidth: 1, borderColor: '#FBBF24',
+  },
+  alertText: { fontSize: 13, color: '#92400E', lineHeight: 20 },
+  dangerText: { color: colors.danger },
 
   btnPrimary: {
     backgroundColor: colors.primary, borderRadius: 12, padding: 16,

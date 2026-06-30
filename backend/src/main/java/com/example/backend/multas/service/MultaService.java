@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Optional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -127,6 +128,22 @@ public class MultaService {
                         "MULTA", multa.getId());
             }
         }
+    }
+
+    // ---------------------------------------------------------------- consulta interna
+
+    /**
+     * Returns the pending fine for a given purchase, if any. Used by CompraService to
+     * include the fine amount in the payment total when retrying an unpaid purchase.
+     */
+    public Optional<Multa> getMultaPendienteByCompraId(Long compraId) {
+        return multaRepository.findByCompraIdAndEstado(compraId, "pendiente");
+    }
+
+    /** Marks a fine as paid without re-running ownership/status checks. Called by CompraService. */
+    public void pagarInternal(Multa multa) {
+        multa.setEstado("pagada");
+        multaRepository.save(multa);
     }
 
     // ---------------------------------------------------------------- lectura
