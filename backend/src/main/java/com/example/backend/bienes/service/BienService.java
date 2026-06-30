@@ -72,7 +72,8 @@ public class BienService {
         this.revisionSimulacionService = revisionSimulacionService;
     }
 
-    @Transactional(readOnly = true)
+    // RW (no readOnly): sincronizarPropuestas() escribe; en Postgres una tx readOnly rechaza writes.
+    @Transactional
     public PagedResponse<BienListItem> list(Usuario usuario, Pageable pageable) {
         sincronizarPropuestas(usuario.getId());
         Page<BienEnConsignacion> page = bienRepository.findByUsuarioId(usuario.getId(), pageable);
@@ -137,7 +138,8 @@ public class BienService {
         return bienMapper.toDetail(bien);
     }
 
-    @Transactional(readOnly = true)
+    // RW (no readOnly): sincronizarPropuestas() escribe; en Postgres una tx readOnly rechaza writes.
+    @Transactional
     public BienDetail detail(Usuario usuario, Long id) {
         sincronizarPropuestas(usuario.getId());
         BienEnConsignacion bien = bienRepository.findByIdAndUsuarioId(id, usuario.getId())
