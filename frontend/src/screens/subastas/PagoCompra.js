@@ -58,15 +58,29 @@ export default function PagoCompra({ navigation, route }) {
       });
       navigation.replace('FacturaCompra', { compraId });
     } catch (err) {
-      const msg = err?.response?.data?.message ?? 'No se pudo completar el pago.';
       const status = err?.response?.status;
+      const backendMsg = err?.response?.data?.message ?? '';
+      const sinSaldo = status === 422 && /insufficient (funds|balance)/i.test(backendMsg);
+
       if (status === 403) {
-        Alert.alert('Acceso restringido', msg, [
+        Alert.alert('Acceso restringido', backendMsg || 'No podés pagar en este momento.', [
           { text: 'Ver multa', onPress: () => navigation.navigate('AccesoRestringido', {}) },
           { text: 'Cancelar', style: 'cancel' },
         ]);
+      } else if (sinSaldo) {
+        Alert.alert(
+          'Saldo insuficiente',
+          'El medio de pago elegido no tiene saldo suficiente para pagar esta compra. Se generó una multa del 10% de tu oferta, que deberás pagar antes de volver a participar. Probá con otro medio de pago o agregá uno nuevo.',
+          [
+            { text: 'Agregar medio de pago', onPress: () => navigation.navigate('AddPaymentMethod') },
+            { text: 'Entendido', style: 'cancel' },
+          ]
+        );
       } else {
-        Alert.alert('Error al pagar', msg);
+        Alert.alert(
+          'No se pudo completar el pago',
+          backendMsg || 'Ocurrió un problema al procesar el pago. Intentá nuevamente en unos minutos.'
+        );
       }
     } finally {
       setPaying(false);
