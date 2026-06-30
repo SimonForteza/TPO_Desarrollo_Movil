@@ -58,4 +58,12 @@ public class AdminBienController {
         BienDetail result = adminBienService.rechazar(id, req);
         return ResponseEntity.ok(ApiResponse.ok("Consignment rejected", result));
     }
+
+    @PutMapping("/{id}/asignar")
+    public ResponseEntity<ApiResponse<BienDetail>> asignar(
+            @PathVariable Long id,
+            @RequestParam Integer subastaId) {
+        BienDetail result = adminBienService.asignar(id, subastaId);
+        return ResponseEntity.ok(ApiResponse.ok("Consignment assigned to auction", result));
+    }
 }
