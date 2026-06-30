@@ -52,8 +52,25 @@ export default function DetalleMulta({ navigation, route }) {
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (err) {
-      const msg = err?.response?.data?.message ?? 'No se pudo pagar la multa.';
-      Alert.alert('Error', msg);
+      const status = err?.response?.status;
+      const backendMsg = err?.response?.data?.message ?? '';
+      const sinSaldo = status === 422 && /insufficient (funds|balance)/i.test(backendMsg);
+
+      if (sinSaldo) {
+        Alert.alert(
+          'Saldo insuficiente',
+          `El medio de pago elegido no tiene saldo suficiente para pagar esta multa de ${money(multa.importe)}. Probá con otro medio de pago o agregá uno nuevo.`,
+          [
+            { text: 'Agregar medio de pago', onPress: () => navigation.navigate('AddPaymentMethod') },
+            { text: 'Entendido', style: 'cancel' },
+          ]
+        );
+      } else {
+        Alert.alert(
+          'No se pudo pagar la multa',
+          backendMsg || 'Ocurrió un problema al procesar el pago. Intentá nuevamente en unos minutos.'
+        );
+      }
     } finally {
       setPaying(false);
     }
