@@ -60,6 +60,28 @@ public class BienMapper {
                 bien.getCreadaEn());
     }
 
+    /**
+     * Igual que {@link #toListItem} pero sin la foto base64. Para respuestas administrativas
+     * (Postman/Swagger) donde el blob solo entorpece la lectura y nadie lo consume.
+     */
+    public BienListItem toListItemSinFoto(BienEnConsignacion bien) {
+        Producto producto = productoRepository.findById(bien.getProductoId()).orElse(null);
+        String descripcion = producto != null ? producto.getDescripcionCatalogo() : null;
+        return new BienListItem(
+                bien.getId(),
+                bien.getProductoId(),
+                bien.getEstado(),
+                descripcion,
+                bien.getMotivoRechazo(),
+                bien.getUbicacionDeposito(),
+                bien.getPrecioBasePropuesto(),
+                bien.getComisionPropuesta(),
+                bien.getGastosDevolucion(),
+                bien.getSubastaId(),
+                null,
+                bien.getCreadaEn());
+    }
+
     public BienDetail toDetail(BienEnConsignacion bien) {
         Producto producto = productoRepository.findById(bien.getProductoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));

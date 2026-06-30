@@ -187,7 +187,7 @@ public class AdminBienService {
 
     private PagedResponse<BienListItem> toPagedResponse(Page<BienEnConsignacion> page) {
         List<BienListItem> content = page.getContent().stream()
-                .map(bienMapper::toListItem)
+                .map(bienMapper::toListItemSinFoto)
                 .collect(Collectors.toList());
         return new PagedResponse<>(content, page.getNumber(), page.getSize(),
                 page.getTotalElements(), page.getTotalPages());
