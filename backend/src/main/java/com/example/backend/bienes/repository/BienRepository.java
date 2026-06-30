@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface BienRepository extends JpaRepository<BienEnConsignacion, Long> {
@@ -13,4 +14,5 @@ public interface BienRepository extends JpaRepository<BienEnConsignacion, Long> 
     Optional<BienEnConsignacion> findByProductoId(Integer productoId);
     Page<BienEnConsignacion> findByEstado(String estado, Pageable pageable);
     Page<BienEnConsignacion> findByEstadoAndSubastaIdIsNull(String estado, Pageable pageable);
+    List<BienEnConsignacion> findByEstadoAndSubastaIdIsNull(String estado);
 }
